@@ -37,3 +37,6 @@ jobs:
       - name: Restart remote service
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "sudo systemctl restart ${DEPLOY_SERVICE:-api-futbol.service}"
+      
+      # - name: Build and run tests
+      #   run: ./mvnw -B -Dapp.jwt.secret=${{ secrets.APP_JWT_SECRET }} package

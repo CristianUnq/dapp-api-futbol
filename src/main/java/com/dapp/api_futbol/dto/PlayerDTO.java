@@ -1,14 +1,15 @@
 package com.dapp.api_futbol.dto;
 import com.dapp.api_futbol.model.Team;
+import java.lang.Double;
 
-public static class PlayerDto {
+public class PlayerDTO {
     private Long id;
     private String name;
     private Team team;
     private Integer matchesPlayed;
     private Integer goals;
     private Integer assists;
-    private Doble rating;
+    private Double rating;
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }

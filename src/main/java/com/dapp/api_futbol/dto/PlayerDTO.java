@@ -25,4 +25,8 @@ public class PlayerDTO {
     public void setAssists(Integer assists) { this.assists = assists; }
     public Double getRating() { return rating; }
     public void setRating(Double rating) { this.rating = rating; }
+    public void setTeam(String teamName) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setTeam'");
+    }
 }

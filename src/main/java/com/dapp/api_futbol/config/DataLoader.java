@@ -7,6 +7,7 @@ import com.dapp.api_futbol.repository.MatchRepository;
 import com.dapp.api_futbol.repository.PlayerRepository;
 import com.dapp.api_futbol.repository.TeamRepository;
 import com.dapp.api_futbol.service.ScraperService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -20,6 +21,9 @@ public class DataLoader implements CommandLineRunner {
     private final ScraperService scraperService;
     private final MatchRepository matchRepository;
 
+    @Value("${app.data-loader.enabled:false}")
+    private boolean enabled;
+
     public DataLoader(TeamRepository teamRepository, PlayerRepository playerRepository, ScraperService scraperService, MatchRepository matchRepository) {
         this.teamRepository = teamRepository;
         this.playerRepository = playerRepository;
@@ -29,6 +33,10 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
+        if (!enabled) {
+            System.out.println("DataLoader is disabled (app.data-loader.enabled=false). Skipping initial data load.");
+            return;
+        }
         // Corregir el orden de borrado para evitar errores de foreign key
         matchRepository.deleteAll();
         playerRepository.deleteAll();

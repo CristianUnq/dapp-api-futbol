@@ -7,22 +7,24 @@ import com.dapp.api_futbol.repository.MatchRepository;
 import com.dapp.api_futbol.repository.PlayerRepository;
 import com.dapp.api_futbol.repository.TeamRepository;
 import com.dapp.api_futbol.service.ScraperService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Component
+/**
+ * Loads initial data only when explicitly enabled via property
+ * app.data-loader.enabled=true. By default the bean won't be created,
+ * which prevents side-effects during tests and CI.
+ */
+@ConditionalOnProperty(name = "app.data-loader.enabled", havingValue = "true", matchIfMissing = false)
 public class DataLoader implements CommandLineRunner {
 
     private final TeamRepository teamRepository;
     private final PlayerRepository playerRepository;
     private final ScraperService scraperService;
     private final MatchRepository matchRepository;
-
-    @Value("${app.data-loader.enabled:false}")
-    private boolean enabled;
 
     public DataLoader(TeamRepository teamRepository, PlayerRepository playerRepository, ScraperService scraperService, MatchRepository matchRepository) {
         this.teamRepository = teamRepository;
@@ -33,10 +35,6 @@ public class DataLoader implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        if (!enabled) {
-            System.out.println("DataLoader is disabled (app.data-loader.enabled=false). Skipping initial data load.");
-            return;
-        }
         // Corregir el orden de borrado para evitar errores de foreign key
         matchRepository.deleteAll();
         playerRepository.deleteAll();
@@ -64,7 +62,7 @@ public class DataLoader implements CommandLineRunner {
             Player player = new Player();
             player.setName(dto.getName());
             player.setTeam(liverpool); // Asignar el equipo que creamos
-            
+
             // Asignar el resto de los atributos
             player.setHeight(dto.getHeight());
             player.setWeight(dto.getWeight());
@@ -80,7 +78,7 @@ public class DataLoader implements CommandLineRunner {
             player.setPassSuccess(dto.getPassSuccess());
             player.setAerialsWon(dto.getAerialsWon());
             player.setManOfTheMatch(dto.getManOfTheMatch());
-            
+
             playerRepository.save(player);
         }
         System.out.println(playerDTOs.size() + " jugadores de Liverpool guardados en la base de datos.");

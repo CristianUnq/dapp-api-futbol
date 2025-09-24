@@ -119,7 +119,16 @@
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
-
+		<dependency>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-java</artifactId>
+			<version>4.15.0</version>
+		</dependency>
+		<dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.17.2</version>
+        </dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -156,8 +165,8 @@
 						<configuration>
 							<outputDirectory>${project.build.directory}/jacoco-report</outputDirectory>
 							<formats>
-								<format>XML</format>
-								<format>HTML</format>
+								<format>xml</format>
+								<format>html</format>
 							</formats>
 						</configuration>
 					</execution>

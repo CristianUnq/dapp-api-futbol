@@ -30,7 +30,7 @@ public class TeamsPlayersController {
             
             if (players.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                     .body("No se encontraron jugadores para el equipo: " + teamName + ". Por favor, verifica que el nombre sea correcto.");
+                                     .body("No se encontrar jugadores para el equipo: " + teamName + ". Por favor, verifica que el nombre sea correcto.");
             }
             return ResponseEntity.ok(players);
             

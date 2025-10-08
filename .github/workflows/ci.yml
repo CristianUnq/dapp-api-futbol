@@ -9,6 +9,22 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: test_db
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,6 +48,10 @@ jobs:
             ${{ runner.os }}-m2-
 
       - name: Build and run tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/test_db
+          SPRING_DATASOURCE_USERNAME: test_user
+          SPRING_DATASOURCE_PASSWORD: test_password
         run: ./mvnw -B -DskipTests=false verify
 
       - name: Upload JAR artifact
@@ -46,7 +66,6 @@ jobs:
           SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
           SONAR_ORG: ${{ secrets.SONAR_ORG }}
         run: |
-          # Skip sonar analysis when the token is not provided (avoids parsing/permission issues)
           if [ -z "${SONAR_TOKEN}" ]; then
             echo "SONAR_TOKEN not set; skipping SonarCloud analysis."
             exit 0

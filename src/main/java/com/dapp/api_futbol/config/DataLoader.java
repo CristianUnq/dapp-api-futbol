@@ -8,11 +8,13 @@ import com.dapp.api_futbol.repository.PlayerRepository;
 import com.dapp.api_futbol.repository.TeamRepository;
 import com.dapp.api_futbol.service.ScraperService;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
+@ConditionalOnProperty(name = "app.data-loader.enabled", havingValue = "true", matchIfMissing = true)
 public class DataLoader implements CommandLineRunner {
 
     private final TeamRepository teamRepository;

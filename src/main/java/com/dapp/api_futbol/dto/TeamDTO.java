@@ -11,6 +11,10 @@ public class TeamDTO {
         this.url = url;
     }
 
+    public TeamDTO() {
+        //TODO Auto-generated constructor stub
+    }
+
     // Getters y setters (o usar records de Java 16+ para simplificar)
     public String getName() {
         return name;

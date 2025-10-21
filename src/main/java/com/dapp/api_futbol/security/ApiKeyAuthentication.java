@@ -15,6 +15,13 @@ public class ApiKeyAuthentication implements Authentication {
         this.apiKey = apiKey;
     }
 
+    /**
+     * This Authentication implementation wraps an ApiKey entity. It provides
+     * the associated username as principal and the key fingerprint as credentials.
+     * It intentionally does not grant authorities here; you can extend it later
+     * if you need role/permission checks.
+     */
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return java.util.Collections.emptyList();

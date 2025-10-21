@@ -39,4 +39,24 @@ public class JwtTokenProvider {
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
     }
 
+    public String generateToken(String subject, long expirationSeconds) {
+        var now = java.time.Instant.now();
+        var exp = now.plusSeconds(expirationSeconds);
+        return Jwts.builder()
+                .setSubject(subject)
+                .setIssuedAt(java.util.Date.from(now))
+                .setExpiration(java.util.Date.from(exp))
+                .signWith(key)
+                .compact();
+    }
+
+    /**
+     * Notes:
+     * - The secret used to build the signing key must be at least 32 bytes long
+     *   (256 bits) when decoded. The constructor validates length and will throw
+     *   an exception if the secret is too short. Use a Base64-encoded 32-byte
+     *   value in production and keep it in a secure store.
+     * - generateToken/validateToken are thin helpers around the JJWT library.
+     */
+
 }

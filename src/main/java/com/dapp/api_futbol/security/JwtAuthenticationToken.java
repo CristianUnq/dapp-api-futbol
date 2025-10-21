@@ -13,6 +13,12 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
         setAuthenticated(true);
     }
 
+    /**
+     * Lightweight Authentication used after validating a JWT. It stores the
+     * subject (username) as the principal. No authorities are included by
+     * default in this simple implementation.
+     */
+
     @Override
     public Object getCredentials() {
         return null;

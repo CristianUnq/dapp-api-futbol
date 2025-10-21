@@ -11,6 +11,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.config.http.SessionCreationPolicy;
 
 @Configuration
 public class SecurityConfig {
@@ -31,6 +32,9 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // ApiKey filter should run before JWT filter so that API key auth is attempted first
+        // Notes:
+        // - API should be stateless: configure SessionCreationPolicy.STATELESS
+        // - ApiKey filter runs before JWT filter so both mechanisms are supported.
         http
             .addFilterBefore(new ApiKeyAuthenticationFilter(apiKeyService), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(new JwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class)
@@ -42,12 +46,13 @@ public class SecurityConfig {
                     "/swagger-ui/index.html",
                     "/swagger-ui/**",
                     "/v3/api-docs.yaml",
-                    "/auth/**"
+                    "/auth/register",
+                    "/auth/login"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
             .csrf(csrf -> csrf.disable())
-            .formLogin();
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         return http.build();
     }

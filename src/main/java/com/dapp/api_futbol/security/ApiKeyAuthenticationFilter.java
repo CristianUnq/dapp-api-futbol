@@ -21,6 +21,10 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        // The API key is expected in the X-API-KEY header.
+        // If present, attempt to find and validate it via ApiKeyService.
+        // On success we set an Authentication built from the ApiKey entity so
+        // downstream handlers can access the owning user.
         String header = request.getHeader("X-API-KEY");
         if (header != null && !header.isBlank()) {
             try {
@@ -28,6 +32,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
                 if (found.isPresent()) {
                     SecurityContextHolder.getContext().setAuthentication(new ApiKeyAuthentication(found.get()));
                 } else {
+                    // Invalid key provided
                     response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid API Key");
                     return;
                 }

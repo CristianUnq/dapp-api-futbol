@@ -1,8 +1,6 @@
 package com.dapp.api_futbol.controller;
 
-import com.dapp.api_futbol.dto.PlayerDTO;
-import com.dapp.api_futbol.response.ResponsePlayers;
-import com.dapp.api_futbol.service.ScraperService;
+import com.dapp.api_futbol.response.ResponseObject;
 import com.dapp.api_futbol.service.TeamsPlayersService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @RestController
@@ -43,7 +40,7 @@ public class TeamsPlayersController {
     @GetMapping("players/{teamName}")
     public ResponseEntity<?> getPlayersOfTeam(@PathVariable String teamName) {
         logger.info("Solicitando jugadores para el equipo: {}", teamName);
-        ResponsePlayers responsePlayers = teamsPlayersService.getPlayersByTeam(teamName);
+        ResponseObject responsePlayers = teamsPlayersService.getPlayersByTeam(teamName);
         return ResponseEntity.ok(responsePlayers);
     }
 }

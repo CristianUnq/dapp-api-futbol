@@ -3,7 +3,7 @@ import com.dapp.api_futbol.dto.PlayerDTO;
 import com.dapp.api_futbol.exception.InvalidTeamNameException;
 import com.dapp.api_futbol.exception.ScrapingException;
 import com.dapp.api_futbol.exception.TeamNotFoundException;
-import com.dapp.api_futbol.response.ResponsePlayers;
+import com.dapp.api_futbol.response.ResponseObject;
 
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
@@ -19,7 +19,7 @@ public class TeamsPlayersService {
         this.scraperService = scraperService;
     }
 
-    public ResponsePlayers getPlayersByTeam(String teamName) {
+    public ResponseObject getPlayersByTeam(String teamName) {
         // Validación
         if (teamName == null || teamName.trim().isEmpty()) {
             throw new InvalidTeamNameException("El nombre del equipo no puede estar vacío");
@@ -33,7 +33,7 @@ public class TeamsPlayersService {
                 throw new TeamNotFoundException(normalizedTeamName);
             }
             
-            ResponsePlayers responsePlayers = new ResponsePlayers(players, "Jugadores encontrados exitosamente", HttpStatus.OK.value());
+            ResponseObject responsePlayers = new ResponseObject(players, "Jugadores encontrados exitosamente", HttpStatus.OK.value());
             return responsePlayers;
             
         } catch (TeamNotFoundException | InvalidTeamNameException e) {

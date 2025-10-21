@@ -1,20 +1,20 @@
 package com.dapp.api_futbol.response;
 import java.time.LocalDateTime;
 
-public class ResponsePlayers {
+public class ResponseObject {
     private Object data;
     private String message;
     private int status;
     private LocalDateTime timestamp;
 
-    public ResponsePlayers(Object data, String message, int status) {
+    public ResponseObject(Object data, String message, int status) {
         this.data = data;
         this.message = message;
         this.status = status;
         this.timestamp = LocalDateTime.now();
     }
     
-    public ResponsePlayers(String message, int status) {
+    public ResponseObject(String message, int status) {
         this.message = message;
         this.status = status;
         this.timestamp = LocalDateTime.now();

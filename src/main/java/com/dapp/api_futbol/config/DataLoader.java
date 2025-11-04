@@ -1,82 +1,84 @@
 package com.dapp.api_futbol.config;
 
-import com.dapp.api_futbol.dto.PlayerDTO;
+import com.dapp.api_futbol.model.Match;
 import com.dapp.api_futbol.model.Player;
 import com.dapp.api_futbol.model.Team;
 import com.dapp.api_futbol.repository.MatchRepository;
 import com.dapp.api_futbol.repository.PlayerRepository;
 import com.dapp.api_futbol.repository.TeamRepository;
-import com.dapp.api_futbol.service.ScraperPersistence;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.time.LocalDateTime;
 
-/*  @Component
-@ConditionalOnProperty(name = "app.data-loader.enabled", havingValue = "true", matchIfMissing = true)
+/**
+ * Simple DataLoader for development/e2e profiles.
+ * Seeds minimal teams, players and a match without calling external scrapers.
+ */
+@Component
+@ConditionalOnProperty(name = "app.data-loader.enabled", havingValue = "true", matchIfMissing = false)
 public class DataLoader implements CommandLineRunner {
 
     private final TeamRepository teamRepository;
     private final PlayerRepository playerRepository;
-    private final ScraperService scraperService;
     private final MatchRepository matchRepository;
 
-    public DataLoader(TeamRepository teamRepository, PlayerRepository playerRepository, ScraperService scraperService, MatchRepository matchRepository) {
+    public DataLoader(TeamRepository teamRepository, PlayerRepository playerRepository, MatchRepository matchRepository) {
         this.teamRepository = teamRepository;
         this.playerRepository = playerRepository;
-        this.scraperService = scraperService;
         this.matchRepository = matchRepository;
     }
 
     @Override
     public void run(String... args) throws Exception {
-        // Corregir el orden de borrado para evitar errores de foreign key
+        // Clear in safe order
         matchRepository.deleteAll();
         playerRepository.deleteAll();
         teamRepository.deleteAll();
 
-        // 1. Crear y guardar el equipo
-        Team liverpool = new Team();
-        liverpool.setName("Liverpool");
-        teamRepository.save(liverpool);
-        System.out.println("Equipo 'Liverpool' guardado en la base de datos.");
+        // Seed two teams
+        Team teamA = new Team();
+        teamA.setName("Team A");
+        teamRepository.save(teamA);
 
-        // 2. Usar el scraper para obtener los jugadores
-        System.out.println("Obteniendo jugadores de Liverpool con el scraper...");
-        List<PlayerDTO> playerDTOs = scraperService.scrapePlayersByTeam("Liverpool");
+        Team teamB = new Team();
+        teamB.setName("Team B");
+        teamRepository.save(teamB);
 
-        // 3. Imprimir los jugadores obtenidos en la consola
-        System.out.println("\n--- Jugadores de Liverpool ---");
-        for (PlayerDTO dto : playerDTOs) {
-            System.out.println(dto.toString());
-        }
-        System.out.println("--- Fin de la lista ---\n");
+    // Seed players for teamA
+    Player p1 = new Player();
+    p1.setName("Player One");
+    p1.setTeam(teamA);
+    p1.setGoals("5");
+    p1.setAssists("2");
+    p1.setRating("7.1");
+    playerRepository.save(p1);
 
-        // 4. Convertir DTOs a entidades y guardarlos
-        for (PlayerDTO dto : playerDTOs) {
-            Player player = new Player();
-            player.setName(dto.getName());
-            player.setTeam(liverpool); // Asignar el equipo que creamos
-            
-            // Asignar el resto de los atributos
-            player.setHeight(dto.getHeight());
-            player.setWeight(dto.getWeight());
-            player.setAppearances(dto.getAppearances());
-            player.setGoals(dto.getGoals());
-            player.setAssists(dto.getAssists());
-            player.setRating(dto.getRating());
-            player.setUrl(dto.getUrl());
-            player.setMinsPlayed(dto.getMinsPlayed());
-            player.setYellowCards(dto.getYellowCards());
-            player.setRedCards(dto.getRedCards());
-            player.setShotsPerGame(dto.getShotsPerGame());
-            player.setPassSuccess(dto.getPassSuccess());
-            player.setAerialsWon(dto.getAerialsWon());
-            player.setManOfTheMatch(dto.getManOfTheMatch());
-            
-            playerRepository.save(player);
-        }
-        System.out.println(playerDTOs.size() + " jugadores de Liverpool guardados en la base de datos.");
+    Player p2 = new Player();
+    p2.setName("Player Two");
+    p2.setTeam(teamA);
+    p2.setGoals("3");
+    p2.setAssists("1");
+    p2.setRating("6.8");
+    playerRepository.save(p2);
+
+    // Seed players for teamB
+    Player p3 = new Player();
+    p3.setName("Player Three");
+    p3.setTeam(teamB);
+    p3.setGoals("4");
+    p3.setAssists("3");
+    p3.setRating("7.3");
+    playerRepository.save(p3);
+
+    // Seed a sample upcoming match (store team names per Match model)
+    Match m = new Match();
+    m.setHomeTeamName(teamA.getName());
+    m.setAwayTeamName(teamB.getName());
+    m.setMatchDate(LocalDateTime.now().plusDays(3));
+    matchRepository.save(m);
+
+        System.out.println("DataLoader: seeded teams, players and a sample match.");
     }
-}*/
+}

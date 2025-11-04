@@ -7,10 +7,14 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.time.LocalDateTime;
 
 public interface MatchRepository extends JpaRepository<Match, Long> {
     Optional<Match> findByFootballDataId(Integer footballDataId);
 
     @Query("SELECT m FROM Match m WHERE m.status = :status AND (LOWER(m.homeTeamName) LIKE CONCAT('%', :name, '%') OR LOWER(m.awayTeamName) LIKE CONCAT('%', :name, '%')) ORDER BY m.matchDate ASC")
     List<Match> findUpcomingByTeamNameAndStatus(@Param("name") String name, @Param("status") String status);
+
+    @Query("SELECT m FROM Match m WHERE m.matchDate > :now AND (LOWER(m.homeTeamName) LIKE CONCAT('%', :name, '%') OR LOWER(m.awayTeamName) LIKE CONCAT('%', :name, '%')) ORDER BY m.matchDate ASC")
+    List<Match> findUpcomingByTeamName(@Param("name") String name, @Param("now") LocalDateTime now);
 }

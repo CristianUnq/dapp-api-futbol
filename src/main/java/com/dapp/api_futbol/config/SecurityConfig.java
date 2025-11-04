@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 public class SecurityConfig {
@@ -44,19 +45,22 @@ public class SecurityConfig {
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/swagger-ui/index.html",
-                    "/swagger-ui/**",
                     "/v3/api-docs.yaml",
                     "/auth/register",
                     "/auth/login",
-                    "/auth/**",
                     "/h2-console/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
+            // Return 401 Unauthorized for unauthenticated requests (REST APIs commonly use 401)
+            .exceptionHandling(e -> e.authenticationEntryPoint((request, response, authException) ->
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED)))
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .headers(headers -> headers.frameOptions().sameOrigin())
-            .formLogin();
+            .headers(headers -> headers
+                .contentTypeOptions(opts -> opts.disable())
+                .xssProtection(xss -> xss.disable())
+                .contentSecurityPolicy(csp -> csp.policyDirectives("frame-ancestors 'self'")));
 
         return http.build();
     }

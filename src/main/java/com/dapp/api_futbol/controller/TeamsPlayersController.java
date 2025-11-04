@@ -2,6 +2,9 @@ package com.dapp.api_futbol.controller;
 
 import com.dapp.api_futbol.response.ResponseObject;
 import com.dapp.api_futbol.service.ScraperService;
+import com.dapp.api_futbol.service.QueryHistoryService;
+import com.dapp.api_futbol.service.UserService;
+import com.dapp.api_futbol.model.User;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -25,9 +28,15 @@ public class TeamsPlayersController {
     
     @Autowired
     private final ScraperService teamsPlayersService;
+    private final QueryHistoryService queryHistoryService;
+    private final UserService userService;
 
-    public TeamsPlayersController(ScraperService teamsPlayersService) {
+    public TeamsPlayersController(ScraperService teamsPlayersService, 
+                                QueryHistoryService queryHistoryService,
+                                UserService userService) {
         this.teamsPlayersService = teamsPlayersService;
+        this.queryHistoryService = queryHistoryService;
+        this.userService = userService;
     }
 
     @Operation(summary = "Obtiene los jugadores de un equipo haciendo web scraping", description = "Retorna los datos de los jugadores de un equipo desde es.whoscored.com")
@@ -38,8 +47,17 @@ public class TeamsPlayersController {
         @ApiResponse(responseCode = "500", description = "Error interno del servidor")
     })
     @GetMapping("players/{teamName}")
-    public ResponseEntity<?> getPlayersOfTeam(@PathVariable String teamName) {
+    public ResponseEntity<?> getPlayersOfTeam(@PathVariable String teamName, java.security.Principal principal) {
         logger.info("Solicitando jugadores para el equipo: {}", teamName);
+        
+        User user = null;
+        if (principal != null) {
+            user = userService.findByUsername(principal.getName()).orElse(null);
+            if (user != null) {
+                queryHistoryService.recordQuery(user, "GET_PLAYERS", "team=" + teamName);
+            }
+        }
+
         ResponseObject responsePlayers = teamsPlayersService.getPlayersByTeam(teamName);
         return ResponseEntity.ok(responsePlayers);
     }

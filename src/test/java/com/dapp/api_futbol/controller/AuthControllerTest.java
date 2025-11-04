@@ -178,7 +178,7 @@ class AuthControllerTest {
                 .content(objectMapper.writeValueAsString(Map.of(
                     "name", "test-key"
                 ))))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -211,7 +211,7 @@ class AuthControllerTest {
         // when/then - sin @WithMockUser
     mockMvc.perform(get("/auth/apikeys")
         .with(csrf()))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -247,6 +247,6 @@ class AuthControllerTest {
         // when/then - sin @WithMockUser
     mockMvc.perform(delete("/auth/apikeys/1")
         .with(csrf()))
-        .andExpect(status().isForbidden());
+        .andExpect(status().isUnauthorized());
     }
 }

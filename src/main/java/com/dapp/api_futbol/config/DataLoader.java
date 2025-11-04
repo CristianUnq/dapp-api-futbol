@@ -6,14 +6,14 @@ import com.dapp.api_futbol.model.Team;
 import com.dapp.api_futbol.repository.MatchRepository;
 import com.dapp.api_futbol.repository.PlayerRepository;
 import com.dapp.api_futbol.repository.TeamRepository;
-import com.dapp.api_futbol.service.ScraperService;
+import com.dapp.api_futbol.service.ScraperPersistence;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Component
+/*  @Component
 @ConditionalOnProperty(name = "app.data-loader.enabled", havingValue = "true", matchIfMissing = true)
 public class DataLoader implements CommandLineRunner {
 
@@ -79,4 +79,4 @@ public class DataLoader implements CommandLineRunner {
         }
         System.out.println(playerDTOs.size() + " jugadores de Liverpool guardados en la base de datos.");
     }
-}
+}*/

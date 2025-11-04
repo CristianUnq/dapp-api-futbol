@@ -1,7 +1,7 @@
 package com.dapp.api_futbol.controller;
 
 import com.dapp.api_futbol.response.ResponseObject;
-import com.dapp.api_futbol.service.TeamsPlayersService;
+import com.dapp.api_futbol.service.ScraperService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -24,9 +24,9 @@ public class TeamsPlayersController {
     private static final Logger logger = LoggerFactory.getLogger(TeamsPlayersController.class);
     
     @Autowired
-    private final TeamsPlayersService teamsPlayersService;
+    private final ScraperService teamsPlayersService;
 
-    public TeamsPlayersController(TeamsPlayersService teamsPlayersService) {
+    public TeamsPlayersController(ScraperService teamsPlayersService) {
         this.teamsPlayersService = teamsPlayersService;
     }
 

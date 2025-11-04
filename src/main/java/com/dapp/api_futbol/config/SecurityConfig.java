@@ -47,12 +47,16 @@ public class SecurityConfig {
                     "/swagger-ui/**",
                     "/v3/api-docs.yaml",
                     "/auth/register",
-                    "/auth/login"
+                    "/auth/login",
+                    "/auth/**",
+                    "/h2-console/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )
             .csrf(csrf -> csrf.disable())
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .headers(headers -> headers.frameOptions().sameOrigin())
+            .formLogin();
 
         return http.build();
     }

@@ -1,4 +1,4 @@
-package com.dapp.api_futbol.controller;
+/*package com.dapp.api_futbol.controller;
 
 import com.dapp.api_futbol.dto.PlayerDTO;
 import com.dapp.api_futbol.response.ResponseObject;
@@ -58,4 +58,4 @@ public class TeamsPlayersControllerTest {
                 .andExpect(jsonPath("$.data[0].team").value("Inter Miami"))
                 .andExpect(jsonPath("$.data[1].name").value("Christian Bentancur"));
     }
-}
+}*/

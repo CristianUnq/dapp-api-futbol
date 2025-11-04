@@ -16,6 +16,9 @@ public class Player {
     @JoinColumn(name = "team_id")
     private Team team;
 
+    private int age;
+    private String position;
+
     // Nuevos campos para las estadísticas
     private String url;
     private String height;
@@ -55,6 +58,22 @@ public class Player {
 
     public void setTeam(Team team) {
         this.team = team;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
     }
 
     public String getUrl() {

@@ -25,5 +25,3 @@ public class TestSecurityConfig {
         return http.build();
     }
 }
-}
-}

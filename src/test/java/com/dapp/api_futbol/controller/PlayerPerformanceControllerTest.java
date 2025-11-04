@@ -3,6 +3,7 @@ package com.dapp.api_futbol.controller;
 import com.dapp.api_futbol.config.TestSecurityConfig;
 import com.dapp.api_futbol.dto.PlayerPerformanceDTO;
 import com.dapp.api_futbol.service.PlayerPerformanceService;
+import org.springframework.context.annotation.Import;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -20,9 +21,10 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(classes = {TestSecurityConfig.class})
+@SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(TestSecurityConfig.class)
 public class PlayerPerformanceControllerTest {
 
     @Autowired

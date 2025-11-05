@@ -63,18 +63,30 @@ public class PlayerPerformanceService {
         return dto;
     }
 
-        private void computeMetrics(PlayerPerformanceDTO dto) {
-                int matchesPlayed = 20;
-                double goals = dto.getTotalGoals();
-                double assists = dto.getTotalAssists();
+         private void computeMetrics(PlayerPerformanceDTO dto) {
+                int matchesPlayed = 20; // fallback si no hay matches
+                if (dto.getLastMatches() != null && !dto.getLastMatches().isEmpty()) {
+                        matchesPlayed = dto.getLastMatches().size();
+                }
+
+                double goals = dto.getTotalGoals() != null ? dto.getTotalGoals() : 0;
+                double assists = dto.getTotalAssists() != null ? dto.getTotalAssists() : 0;
+                double rating = dto.getAverageRating() != null ? dto.getAverageRating() : 0;
 
                 double goalsPerMatch = goals / matchesPlayed;
                 double assistsPerMatch = assists / matchesPlayed;
-                double contribPerMatch = (goals + assists) / matchesPlayed;
-                double normalized = contribPerMatch / 1.5;
+                double contribPerMatch = goalsPerMatch + assistsPerMatch;
 
-                double performanceIndex = 8.433;
-                double attackImpact = 4.5;
+                // Normalizar contra máximo esperado (1.5 por partido)
+                double normalized = Math.min(contribPerMatch / 1.5, 1.0);
+
+                double performanceIndex =
+                        0.6 * (rating / 10.0) +    // rating pesa 60%
+                        0.4 * normalized;         // contribuciones pesan 40%
+
+                performanceIndex *= 10.0;
+
+                double attackImpact = (goals * 4 + assists * 3) / matchesPlayed;
 
                 dto.setMatchesPlayed(matchesPlayed);
                 dto.setGoalsPerMatch(round(goalsPerMatch));
@@ -85,7 +97,7 @@ public class PlayerPerformanceService {
                 dto.setAttackImpact(round(attackImpact));
 
                 dto.setTierRating(mapPerformanceToTier(performanceIndex));
-        }
+         }
 
 
         private String mapPerformanceToTier(double score) {

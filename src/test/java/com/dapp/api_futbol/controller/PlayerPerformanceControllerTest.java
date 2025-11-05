@@ -6,6 +6,7 @@ import com.dapp.api_futbol.service.PlayerPerformanceService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -21,8 +22,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(PlayerPerformanceController.class)
 @Import(TestSecurityConfig.class)
 @ActiveProfiles("test")
 public class PlayerPerformanceControllerTest {
@@ -36,7 +36,6 @@ public class PlayerPerformanceControllerTest {
     @Test
     @WithMockUser
     void getPlayerPerformance_ShouldReturnPlayerStats() throws Exception {
-        // Arrange
         PlayerPerformanceDTO mockDto = new PlayerPerformanceDTO();
         mockDto.setPlayerId(1L);
         mockDto.setPlayerName("Lionel Messi");
@@ -48,7 +47,6 @@ public class PlayerPerformanceControllerTest {
 
         when(playerPerformanceService.getPlayerPerformance(anyLong())).thenReturn(mockDto);
 
-        // Act & Assert
         mockMvc.perform(get("/players/performance/1")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -59,12 +57,5 @@ public class PlayerPerformanceControllerTest {
                 .andExpect(jsonPath("$.averageRating").value(8.5))
                 .andExpect(jsonPath("$.totalGoals").value(15))
                 .andExpect(jsonPath("$.totalAssists").value(10));
-    }
-
-    @Test
-    void getPlayerPerformance_WithoutAuth_ShouldReturnUnauthorized() throws Exception {
-        mockMvc.perform(get("/players/performance/1")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
     }
 }

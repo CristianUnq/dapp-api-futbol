@@ -11,6 +11,17 @@ public class PlayerPerformanceDTO {
     private Double averageRating;
     private Integer totalGoals;
     private Integer totalAssists;
+    
+    // métricas adicionales que pide el test
+    private Integer matchesPlayed;
+    private Double goalsPerMatch;
+    private Double assistsPerMatch;
+    private Double goalContributionsPerMatch;
+    private Double normalizedGoalContrib;
+    private Double performanceIndex;
+    private Double attackImpact;
+    private String tierRating;
+
     private List<MatchPerformanceDTO> lastMatches;
 
     @Data

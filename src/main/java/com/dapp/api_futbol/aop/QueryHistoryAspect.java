@@ -67,8 +67,8 @@ public class QueryHistoryAspect {
             return null;
         }
         for (Object arg : args) {
-            if (arg instanceof Principal) {
-                return (Principal) arg;
+            if (arg instanceof Principal principal) {
+                return principal;
             }
         }
         return null;

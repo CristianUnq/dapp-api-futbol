@@ -30,7 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -167,7 +166,7 @@ public class ScraperPersistence {
                             break;
                         }
                     }
-                    Element nameCell = nameCellIndex >= 0 ? cells.get(nameCellIndex) : cells.get(0);
+                    Element nameCell = nameCellIndex >= 0 ? cells.get(nameCellIndex) : cells.getFirst();
 
                     // Clean and normalize the player name from the anchor text
                     String rawName = playerLinkElement.text().replaceAll("^\\d+\\s*", "").trim();
@@ -180,7 +179,7 @@ public class ScraperPersistence {
                     Optional<Player> existingPlayerOpt = playerRepository.findByNameAndTeam(playerName, team);
                     Player player = existingPlayerOpt.orElseGet(Player::new);
                     // If new player, set name and team now; if existing, we'll update fields
-                    if (!existingPlayerOpt.isPresent()) {
+                    if (existingPlayerOpt.isEmpty()) {
                         player.setName(playerName);
                         player.setTeam(team);
                     }
@@ -323,7 +322,7 @@ public class ScraperPersistence {
             if (cells.size() < 9) continue; 
 
             // El nombre del equipo está en la celda 0 dentro de un enlace
-            String teamName = cells.get(0).select("a.team-link").text().trim();
+            String teamName = cells.getFirst().select("a.team-link").text().trim();
             if (teamName.isEmpty()) continue;
 
             Team team = teamRepository.findByName(teamName).orElse(new Team());
@@ -497,11 +496,11 @@ public class ScraperPersistence {
         try {
             TakesScreenshot ts = (TakesScreenshot) driver;
             File source = ts.getScreenshotAs(OutputType.FILE);
-            Path destination = Paths.get("failure-screenshot.png");
+            Path destination = Path.of("failure-screenshot.png");
             Files.copy(source.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
             System.out.println("Screenshot guardado en: " + destination.toAbsolutePath());
 
-            Path htmlPath = Paths.get("failure-page.html");
+            Path htmlPath = Path.of("failure-page.html");
             Files.write(htmlPath, driver.getPageSource().getBytes(StandardCharsets.UTF_8));
             System.out.println("HTML de la página guardado en: " + htmlPath.toAbsolutePath());
         } catch (IOException ex) {

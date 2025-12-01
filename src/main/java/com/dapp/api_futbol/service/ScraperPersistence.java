@@ -166,7 +166,7 @@ public class ScraperPersistence {
                             break;
                         }
                     }
-                    Element nameCell = nameCellIndex >= 0 ? cells.get(nameCellIndex) : cells.getFirst();
+                    Element nameCell = nameCellIndex >= 0 ? cells.get(nameCellIndex) : cells.first();
 
                     // Clean and normalize the player name from the anchor text
                     String rawName = playerLinkElement.text().replaceAll("^\\d+\\s*", "").trim();
@@ -322,7 +322,7 @@ public class ScraperPersistence {
             if (cells.size() < 9) continue; 
 
             // El nombre del equipo está en la celda 0 dentro de un enlace
-            String teamName = cells.getFirst().select("a.team-link").text().trim();
+            String teamName = cells.first().select("a.team-link").text().trim();
             if (teamName.isEmpty()) continue;
 
             Team team = teamRepository.findByName(teamName).orElse(new Team());

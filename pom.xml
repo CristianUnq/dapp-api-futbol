@@ -28,8 +28,8 @@
 	</scm>
 	<properties>
 		<java.version>21</java.version>
-		<!-- Temporary: compile with Java 17 while JDK 21 is being installed on the build machine -->
-		<maven.compiler.release>17</maven.compiler.release>
+		<!-- Target Java release for compilation -->
+		<maven.compiler.release>21</maven.compiler.release>
 	</properties>
 	<dependencies>
 

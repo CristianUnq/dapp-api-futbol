@@ -1,7 +1,7 @@
 package com.dapp.api_futbol.controller;
 
 import com.dapp.api_futbol.response.ResponseObject;
-import com.dapp.api_futbol.service.ScraperService;
+import com.dapp.api_futbol.service.TeamsPlayersService;
 import com.dapp.api_futbol.service.QueryHistoryService;
 import com.dapp.api_futbol.service.UserService;
 import com.dapp.api_futbol.model.User;
@@ -27,11 +27,11 @@ public class TeamsPlayersController {
     private static final Logger logger = LoggerFactory.getLogger(TeamsPlayersController.class);
     
     @Autowired
-    private final ScraperService teamsPlayersService;
+    private final TeamsPlayersService teamsPlayersService;
     private final QueryHistoryService queryHistoryService;
     private final UserService userService;
 
-    public TeamsPlayersController(ScraperService teamsPlayersService, 
+    public TeamsPlayersController(TeamsPlayersService teamsPlayersService, 
                                 QueryHistoryService queryHistoryService,
                                 UserService userService) {
         this.teamsPlayersService = teamsPlayersService;
@@ -49,15 +49,6 @@ public class TeamsPlayersController {
     @GetMapping("players/{teamName}")
     public ResponseEntity<?> getPlayersOfTeam(@PathVariable String teamName, java.security.Principal principal) {
         logger.info("Solicitando jugadores para el equipo: {}", teamName);
-        
-        User user = null;
-        if (principal != null) {
-            user = userService.findByUsername(principal.getName()).orElse(null);
-            if (user != null) {
-                queryHistoryService.recordQuery(user, "GET_PLAYERS", "team=" + teamName);
-            }
-        }
-
         ResponseObject responsePlayers = teamsPlayersService.getPlayersByTeam(teamName);
         return ResponseEntity.ok(responsePlayers);
     }

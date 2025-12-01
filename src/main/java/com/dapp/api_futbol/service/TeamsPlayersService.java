@@ -12,12 +12,12 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class ScraperService {
+public class TeamsPlayersService {
 
 	private final TeamRepository teamRepository;
 	private final PlayerRepository playerRepository;
 
-	public ScraperService(TeamRepository teamRepository, PlayerRepository playerRepository) {
+	public TeamsPlayersService(TeamRepository teamRepository, PlayerRepository playerRepository) {
 		this.teamRepository = teamRepository;
 		this.playerRepository = playerRepository;
 	}

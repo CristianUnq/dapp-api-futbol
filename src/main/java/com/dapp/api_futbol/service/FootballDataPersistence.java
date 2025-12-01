@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.IOException;
 import java.net.URI;
@@ -20,8 +21,10 @@ import java.util.Optional;
 @Service
 public class FootballDataPersistence {
 
-    private static final String BASE_URL = "https://api.football-data.org/v4/";
-    private final String token = "a4759c66d2c74ec0bab2e83945e81a0d";
+    @Value("${football.data.base_url}")
+    private String BASE_URL;
+    @Value("${football.data.token}")
+    private String token;
 
     private final MatchRepository matchRepository;
 
@@ -29,7 +32,7 @@ public class FootballDataPersistence {
         this.matchRepository = matchRepository;
     }
 
-    @Scheduled(cron = "0 * * * * ?") // Se ejecuta todos los dias a la medianoche
+    @Scheduled(initialDelay = 0, fixedRate = 24 * 60 * 60 * 1000)
     @Transactional
     public void syncChampionsLeagueMatches() {
         System.out.println("Iniciando la sincronización de partidos de la Champions League...");
@@ -44,8 +47,10 @@ public class FootballDataPersistence {
         if (!matchesArray.isArray()) return;
 
         for (JsonNode matchNode : matchesArray) {
+            // Saves the matches to the database
             Integer matchId = matchNode.get("id").asInt();
 
+        
             // Evita duplicados buscando si el partido ya existe
             Optional<Match> existingMatch = matchRepository.findByFootballDataId(matchId);
             if (existingMatch.isPresent()) continue;

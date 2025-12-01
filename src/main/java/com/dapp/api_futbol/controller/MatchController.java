@@ -10,30 +10,24 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.dapp.api_futbol.response.ResponseObject;
-import com.dapp.api_futbol.service.FootballDataService;
+import com.dapp.api_futbol.service.MatchService;
 import com.dapp.api_futbol.service.QueryHistoryService;
 import com.dapp.api_futbol.service.UserService;
 import com.dapp.api_futbol.model.User;
+import com.dapp.api_futbol.dto.MatchPredictionDTO;
 
-import io.micrometer.core.ipc.http.HttpSender.Response;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 
 @RestController
 @RequestMapping("/footballData")
-public class FootballDataController {
+public class MatchController {
     
     private static final Logger logger = LoggerFactory.getLogger(TeamsPlayersController.class);
     
     @Autowired
-    private FootballDataService footballDataService;
-
-    @Autowired
-    private QueryHistoryService queryHistoryService;
-
-    @Autowired
-    private UserService userService;
+    private MatchService footballDataService;
 
     @Operation(summary = "Obtiene los proximos partidos de un equipo", description = "Retorna los proximos partidos de un equipo desde FootballData.com")
     @ApiResponses(value = {
@@ -45,16 +39,21 @@ public class FootballDataController {
     @GetMapping("nextMatches/{teamName}")
     public ResponseEntity<?> getNextMatchesFromTeam(@PathVariable String teamName, java.security.Principal principal) {
         logger.info("Solicitando proximos partidos del equipo: {}", teamName);
-
-        User user = null;
-        if (principal != null) {
-            user = userService.findByUsername(principal.getName()).orElse(null);
-            if (user != null) {
-                queryHistoryService.recordQuery(user, "GET_NEXT_MATCHES", "team=" + teamName);
-            }
-        }
-
         ResponseObject responseNextMatches = footballDataService.getNextMatchesOf(teamName);
         return ResponseEntity.ok(responseNextMatches);
+    }
+
+    @Operation(summary = "Obtiene una predicción de resultado para un partido", description = "Retorna las probabilidades de victoria del equipo local, visitante o empate para un partido específico.")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Predicción generada exitosamente"),
+        @ApiResponse(responseCode = "404", description = "Partido o equipos no encontrados"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
+    @GetMapping("prediction/{idMatch}")
+    public ResponseEntity<?> getMatchPrediction(@PathVariable Long idMatch, java.security.Principal principal) {
+        logger.info("Solicitando predicción para el partido con ID: {}", idMatch);
+        // El servicio MatchService se inyecta como 'footballDataService'
+        MatchPredictionDTO prediction = footballDataService.getPredictionFrom(idMatch);
+        return ResponseEntity.ok(prediction);
     }
 }

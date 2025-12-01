@@ -20,6 +20,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,13 +29,18 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.text.DecimalFormat;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.concurrent.TimeUnit;
 import java.nio.charset.StandardCharsets;
 import java.io.File;
@@ -45,9 +51,12 @@ import org.openqa.selenium.TakesScreenshot;
 @Service
 public class ScraperPersistence {
 
-    private static final String BASE_URL = "https://es.whoscored.com";
-    private static final String CHAMPIONS_LEAGUE_TEAMS_URL = "https://es.whoscored.com/regions/250/tournaments/12/europa-champions-league";
-    private static final String SEARCH_URL_TEMPLATE = BASE_URL + "/Search/?t=";
+    @Value("${who.scored.base_url}")
+    private String BASE_URL;
+    @Value("${who.scored.champions_league_teams_url}")
+    private String CHAMPIONS_LEAGUE_TEAMS_URL;
+    
+    private final String SEARCH_URL_TEMPLATE = BASE_URL + "/Search/?t=";
 
     private final TeamRepository teamRepository;
     private final PlayerRepository playerRepository;
@@ -61,12 +70,14 @@ public class ScraperPersistence {
     // and next runs are scheduled every 60_000ms. When moving to production you
     // can switch back to a cron expression like "0 0/1 * * * ?" or a daily cron.
     // Ejecuta cada 90 segundos (1.5 minutos). fixedRate mide en milisegundos.
-    @Scheduled(fixedRate = 90000, initialDelay = 5000)
+    
+    @Scheduled(initialDelay = 0, fixedRate = 24 * 60 * 60 * 1000)
     @Transactional
     public void scrapeAndSaveChampionsLeagueTeamsAndPlayers() {
         System.out.println("Iniciando scraping de equipos y jugadores de la Champions League...");
         WebDriver driver = setupWebDriver();
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
+        Integer limitTeams = 5;
         try {
             driver.get(CHAMPIONS_LEAGUE_TEAMS_URL);
             acceptCookies(driver, wait);
@@ -84,6 +95,8 @@ public class ScraperPersistence {
             }
 
             for (Element teamLink : teamLinks) {
+                limitTeams--;
+                if (limitTeams < 0) break;
                 String teamName = teamLink.text();
                 String teamUrl = teamLink.attr("href");
 
@@ -109,6 +122,9 @@ public class ScraperPersistence {
             if (driver != null) driver.quit();
         }
         System.out.println("Scraping de equipos y jugadores completado.");
+        
+        // Inicia el scraping de estadisticas de equipos despues de tener los equipos base.
+        scrapeAndSaveTeamStats();
     }
 
     private void scrapeAndSavePlayersForTeam(WebDriver driver, WebDriverWait wait, Team team, String teamUrl) {
@@ -127,62 +143,136 @@ public class ScraperPersistence {
                 Elements cells = row.select("td");
                 if (cells.isEmpty()) continue;
 
-                // helper to find cell by header variants
-                java.util.function.Function<String[], String> cellByHeaders = (variants) -> {
-                    for (int i = 0; i < headers.size(); i++) {
-                        String h = headers.get(i);
-                        for (String v : variants) {
-                            if (h.contains(v)) {
-                                if (i < cells.size()) return cells.get(i).text();
+                // helper to find cell by header variants (used for KG and other numeric stats)
+                    java.util.function.Function<String[], String> cellByHeaders = (variants) -> {
+                        for (int i = 0; i < headers.size(); i++) {
+                            String h = headers.get(i);
+                            for (String v : variants) {
+                                if (h.contains(v)) {
+                                    if (i < cells.size()) return cells.get(i).text();
+                                }
+                            }
+                        }
+                        return "";
+                    };
+
+                    // Find the link and the cell that contains the player's name
+                    Element playerLinkElement = row.selectFirst("a[href*='/Players/'], a[href*='/players/']");
+                    if (playerLinkElement == null) continue;
+
+                    int nameCellIndex = -1;
+                    for (int i = 0; i < cells.size(); i++) {
+                        if (!cells.get(i).select("a[href*='/Players/'], a[href*='/players/']").isEmpty()) {
+                            nameCellIndex = i;
+                            break;
+                        }
+                    }
+                    Element nameCell = nameCellIndex >= 0 ? cells.get(nameCellIndex) : cells.get(0);
+
+                    // Clean and normalize the player name from the anchor text
+                    String rawName = playerLinkElement.text().replaceAll("^\\d+\\s*", "").trim();
+                    // Remove suffixes like " - MP(CID)" or trailing parentheses
+                    rawName = rawName.replaceFirst("\\s*-\\s*.*$", "");
+                    rawName = rawName.replaceFirst("\\s*\\(.*\\)\\s*$", "").trim();
+                    if (rawName.isEmpty()) continue;
+
+                    String playerName = rawName;
+                    Optional<Player> existingPlayerOpt = playerRepository.findByNameAndTeam(playerName, team);
+                    Player player = existingPlayerOpt.orElseGet(Player::new);
+                    // If new player, set name and team now; if existing, we'll update fields
+                    if (!existingPlayerOpt.isPresent()) {
+                        player.setName(playerName);
+                        player.setTeam(team);
+                    }
+
+                    // --- Extract age and positions deterministically from the same name cell ---
+                    String nameCellText = nameCell.text();
+                    int extractedAge = 0;
+                    String extractedPositions = null;
+
+                    // Prefer the format where the details follow the link, e.g. "32, MP(C),DL"
+                    String afterLink = nameCellText.replaceFirst(java.util.regex.Pattern.quote(playerLinkElement.text()), "").trim();
+                    // remove leading commas/spaces
+                    afterLink = afterLink.replaceFirst("^[,\u00A0\s]+", "").trim();
+                    if (!afterLink.isEmpty()) {
+                        // split by first comma: first token often is the age
+                        String[] parts = afterLink.split("\\,\\s*", 2);
+                        // If split failed due to escaping, fallback to simple comma split
+                        if (parts.length == 1 && afterLink.contains(",")) parts = afterLink.split(",", 2);
+                        String firstToken = parts.length > 0 ? parts[0].trim() : "";
+                        // Try to parse a pure numeric first token as age
+                        Matcher ageOnly = Pattern.compile("^(\\d{1,2})$").matcher(firstToken);
+                        if (ageOnly.find()) {
+                            try { extractedAge = Integer.parseInt(ageOnly.group(1)); } catch (NumberFormatException ex) { extractedAge = 0; }
+                        } else {
+                            // If first token contains digits at start (e.g. '32 '), extract leading digits
+                            Matcher leadingDigits = Pattern.compile("^(\\d{1,2})\\b").matcher(firstToken);
+                            if (leadingDigits.find()) {
+                                try { extractedAge = Integer.parseInt(leadingDigits.group(1)); } catch (NumberFormatException ex) { extractedAge = 0; }
+                            }
+                        }
+
+                        // Determine positions: if age was parsed and there's a remainder, that's positions
+                        if (extractedAge > 0) {
+                            if (parts.length > 1) extractedPositions = parts[1].trim();
+                        } else {
+                            // No numeric age in first token -> treat the whole afterLink as positions
+                            extractedPositions = afterLink;
+                        }
+                    }
+
+                    // Fallback heuristics if deterministic parsing didn't yield an age
+                    if (extractedAge == 0) {
+                        Pattern[] agePatterns = new Pattern[] {
+                            Pattern.compile("\\b(\\d{1,2})\\s*[\\u00A0\\s]*a\\u00F1os?\\b", Pattern.CASE_INSENSITIVE),
+                            Pattern.compile("\\b(\\d{1,2})\\s*(?:years?|yrs?)\\b", Pattern.CASE_INSENSITIVE),
+                            Pattern.compile("\\b(\\d{1,2})\\b")
+                        };
+                        for (Pattern p : agePatterns) {
+                            Matcher m = p.matcher(nameCellText);
+                            if (m.find()) {
+                                try { extractedAge = Integer.parseInt(m.group(1)); } catch (NumberFormatException ex) { extractedAge = 0; }
+                                if (extractedAge > 0 && extractedAge < 60) break;
                             }
                         }
                     }
-                    // fallback: try some common fixed indices
-                    for (String v : variants) {
-                        if (v.equals("name") && cells.size() > 2) return cells.get(2).text();
-                        if (v.equals("age") && cells.size() > 3) return cells.get(3).text();
-                        if (v.equals("position") && cells.size() > 4) return cells.get(4).text();
+
+                    // Clean and set parsed values
+                    player.setAge(extractedAge);
+                    if (extractedAge == 0) System.out.println("[Scraper Verificación] edad no encontrada para: " + playerName + " -- nameCell='" + nameCellText + "'");
+
+                    if (extractedPositions != null && !extractedPositions.isEmpty()) {
+                        String cleaned = extractedPositions.replaceAll("\\b(\\d{1,2})\\s*[\\u00A0\\s]*a\\u00F1os?\\b", "").replaceAll("\\(\\d{1,2}-\\d{1,2}-\\d{2,4}\\)", "").trim();
+                        cleaned = cleaned.replaceAll("^[\\-:\\s]+|[\\-:\\s]+$", "").trim();
+                        if (!cleaned.isEmpty()) player.setPosition(cleaned);
                     }
-                    return "";
-                };
 
-                String playerName = cellByHeaders.apply(new String[]{"name", "jugador", "player", "nombre"}).trim();
-                if (playerName.isEmpty()) continue;
-
-                Optional<Player> existingPlayer = playerRepository.findByNameAndTeam(playerName, team);
-                if (existingPlayer.isPresent()) continue; // don't overwrite for now
-
-                Player player = new Player();
-                player.setName(playerName);
-
-                String ageStr = cellByHeaders.apply(new String[]{"age", "edad"}).trim();
-                try {
-                    player.setAge(Integer.parseInt(ageStr));
-                } catch (NumberFormatException ex) {
-                    player.setAge(0);
-                }
-
-                player.setPosition(cellByHeaders.apply(new String[]{"position", "posicion", "pos", "posiciones"}));
+                    // Verification log for troubleshooting: name, age, position and raw cell
+                    System.out.println("[Scraper Verificación] Nombre: '" + playerName + "', Edad: " + extractedAge + ", Posición: '" + (player.getPosition() != null ? player.getPosition() : "") + "' -- raw='" + nameCellText + "'");
 
                 // Additional stats
-                player.setHeight(cellByHeaders.apply(new String[]{"CM", "altura", "height"}));
-                player.setWeight(cellByHeaders.apply(new String[]{"KG", "KiloGramos", "weight", "peso"}));
-                player.setAppearances(cellByHeaders.apply(new String[]{"apps", "appearances", "partidos", "pj", "AP%"}));
+                player.setHeight(cellByHeaders.apply(new String[]{"cm", "altura", "height"}));
+                player.setWeight(cellByHeaders.apply(new String[]{"kg", "kilos", "peso", "weight"}));
+                player.setAppearances(cellByHeaders.apply(new String[]{"apps", "appearances", "partidos", "pj"}));
                 player.setMinsPlayed(cellByHeaders.apply(new String[]{"mins", "minutes", "minutos", "min"}));
                 player.setGoals(cellByHeaders.apply(new String[]{"goals", "goles", "gls"}));
                 player.setAssists(cellByHeaders.apply(new String[]{"asist", "asistencias", "ast"}));
-                player.setYellowCards(cellByHeaders.apply(new String[]{"yellow", "amarilla", "yellow cards", "amarillas", "amar"}));
-                player.setRedCards(cellByHeaders.apply(new String[]{"red", "roja", "red cards", "rojas"}));
-                player.setShotsPerGame(cellByHeaders.apply(new String[]{"shots", "disparos", "shots per game", "TpP"}));
-                player.setPassSuccess(cellByHeaders.apply(new String[]{"pass", "pases", "%"}));
+                player.setYellowCards(cellByHeaders.apply(new String[]{"yellow", "amarilla", "amarillas", "amar"}));
+                player.setRedCards(cellByHeaders.apply(new String[]{"red", "roja", "rojas"}));
+                player.setShotsPerGame(cellByHeaders.apply(new String[]{"shots", "disparos", "shots per game", "tpp"}));
+                player.setPassSuccess(cellByHeaders.apply(new String[]{"pass", "pases", "%", "ap%"}));
                 player.setAerialsWon(cellByHeaders.apply(new String[]{"aerial", "aéreos", "aerials"}));
-                player.setManOfTheMatch(cellByHeaders.apply(new String[]{"motm", "mom", "man of the match", "jugador del partido", "JdelP"}));
+                player.setManOfTheMatch(cellByHeaders.apply(new String[]{"motm", "mom", "man of the match", "jugador del partido", "jdelp"}));
                 player.setRating(cellByHeaders.apply(new String[]{"rating", "media", "avg"}));
 
-                // Some additional metadata
-                // try to get url if available
-                Element link = row.selectFirst("a[href*='/Player/']");
-                if (link != null) player.setUrl(link.attr("href"));
+                // Some additional metadata: set canonical player URL if available
+                if (playerLinkElement != null) {
+                    String href = playerLinkElement.attr("href");
+                    if (href != null && !href.isEmpty()) {
+                        if (href.startsWith("http")) player.setUrl(href);
+                        else player.setUrl(BASE_URL + href);
+                    }
+                }
 
                 player.setTeam(team);
                 playerRepository.save(player);
@@ -192,6 +282,149 @@ public class ScraperPersistence {
         }
     }
 
+
+    public void scrapeAndSaveTeamStats() {
+        WebDriver driver = setupWebDriver();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
+        try {
+            System.out.println("[Scraper] Iniciando scraping de estadísticas de equipos...");
+            scrapeStandings(driver, wait);
+            scrapeTeamPerformanceStats(driver, wait);
+            System.out.println("[Scraper] Finalizado scraping de estadísticas de equipos.");
+        } catch (Exception e) {
+            System.err.println("Error al scrapear estadísticas de equipos: " + e.getMessage());
+            handleScraperError(driver, e);
+        } finally {
+            if (driver != null) {
+                driver.quit();
+            }
+        }
+    }
+
+    private void scrapeStandings(WebDriver driver, WebDriverWait wait) {
+        String url = "https://es.whoscored.com/regions/250/tournaments/12/seasons/10903/stages/24796/show/europa-champions-league-2025-2026";
+        System.out.println("[Scraper] Obteniendo datos de clasificación desde: " + url);
+        driver.get(url);
+        acceptCookies(driver, wait);
+        // Esperamos por un elemento más estable que el ID dinámico de la tabla.
+        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("h2.tournament-tables-header")));
+
+        Document doc = Jsoup.parse(driver.getPageSource());
+        // Selector más específico para asegurar que obtenemos la tabla.
+        Element table = doc.selectFirst("div[id^='standings-'] table");
+        if (table == null) {
+             System.err.println("[Scraper] No se pudo encontrar el elemento <table> dentro de la sección de clasificaciones.");
+             return;
+        }
+
+        for (Element row : table.select("tbody tr")) {
+            Elements cells = row.select("td");
+            // Si una fila no tiene suficientes celdas, la saltamos.
+            if (cells.size() < 9) continue; 
+
+            // El nombre del equipo está en la celda 0 dentro de un enlace
+            String teamName = cells.get(0).select("a.team-link").text().trim();
+            if (teamName.isEmpty()) continue;
+
+            Team team = teamRepository.findByName(teamName).orElse(new Team());
+            team.setName(teamName);
+
+            // Accedemos a los datos por el índice de la columna, que es más robusto.
+            // J=1, G=2, E=3, P=4, GF=5, GC=6, DG=7, Pts=8 (índices basados en 0)
+            team.setPartidosJugados(parseInt(cells.get(1).text()));
+            team.setPartidosGanados(parseInt(cells.get(2).text()));
+            team.setPartidosEmpatados(parseInt(cells.get(3).text()));
+            team.setPartidosPerdidos(parseInt(cells.get(4).text()));
+            team.setGolesAFavor(parseInt(cells.get(5).text()));
+            team.setGolesEnContra(parseInt(cells.get(6).text()));
+            team.setDiferenciaDeGoles(parseInt(cells.get(7).text()));
+            team.setPuntos(parseInt(cells.get(8).text()));
+
+            teamRepository.save(team);
+        }
+        System.out.println("[Scraper] Datos de clasificación procesados.");
+    }
+
+    private void scrapeTeamPerformanceStats(WebDriver driver, WebDriverWait wait) {
+        String url = "https://es.whoscored.com/regions/250/tournaments/12/seasons/10903/stages/24796/teamstatistics/europa-champions-league-2025-2026";
+        System.out.println("[Scraper] Obteniendo estadísticas de rendimiento desde: " + url);
+        driver.get(url);
+        acceptCookies(driver, wait);
+        wait.until(ExpectedConditions.presenceOfElementLocated(By.id("top-team-stats-summary-grid")));
+
+        Document doc = Jsoup.parse(driver.getPageSource());
+        Element table = doc.selectFirst("#top-team-stats-summary-grid");
+        if (table == null) {
+            System.err.println("[Scraper] No se pudo encontrar la tabla de estadísticas de equipos.");
+            return;
+        }
+
+        Map<String, Integer> headerMap = getHeaderMap(table.select("thead th"));
+        for (Element row : table.select("tbody tr")) {
+            String teamName = row.select("a.team-link").text().replaceAll("^\\d+\\.\\s*", "").trim();
+            if (teamName.isEmpty()) continue;
+
+            teamRepository.findByName(teamName).ifPresent(team -> {
+                team.setTirosPp(getCellText(row, headerMap, "tiros pp"));
+                team.setPosesion(getCellText(row, headerMap, "posesion%"));
+                team.setAciertoPase(getCellText(row, headerMap, "aciertopase%"));
+                team.setAereos(getCellText(row, headerMap, "aéreos"));
+                team.setRating(getCellText(row, headerMap, "rating"));
+                teamRepository.save(team);
+            });
+        }
+        System.out.println("[Scraper] Estadísticas de rendimiento procesadas.");
+    }
+
+    private Map<String, Integer> getHeaderMap(Elements headers) {
+        Map<String, Integer> headerMap = new HashMap<>();
+        for (int i = 0; i < headers.size(); i++) {
+            headerMap.put(headers.get(i).text().toLowerCase().trim(), i);
+        }
+        return headerMap;
+    }
+
+    private String getCellText(Element row, Map<String, Integer> headerMap, String headerName) {
+        Integer index = headerMap.get(headerName);
+        if (index != null && row.select("td").size() > index) {
+            return row.select("td").get(index).text();
+        }
+        return null;
+    }
+
+    private Integer parseInt(String value) {
+        if (value == null || value.trim().isEmpty() || value.equals("-")) return 0;
+        try {
+            return Integer.parseInt(value.replaceAll("[^\\d-]", ""));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+   /*  private String parseDouble(String value) {
+        if (value == null || value.trim().isEmpty() || value.equals("-")) return 0.0;
+        try {
+            String cleanedValue = value
+                .replace(',', '.')
+                .replaceAll("[^\\d.]", "");
+
+            if (cleanedValue.isEmpty()) {
+                return 0.0;
+            }
+
+            double parsedValue = Double.parseDouble(cleanedValue);
+            
+            DecimalFormat df = new DecimalFormat("#.#");
+            //String valorFormateado = df.format(14.600000); // Resultado: "14.6"
+
+            // Si necesitas mantenerlo como número
+            return df.format(parsedValue);
+
+        } catch (NumberFormatException e) {
+            System.err.println("Error al parsear el double del valor: '" + value + "'");
+            return 0.0;
+        }
+    }*/
 
     private String findTeamUrl(WebDriver driver, WebDriverWait wait, String teamName) {
         try {
@@ -221,14 +454,35 @@ public class ScraperPersistence {
     }
 
     private void acceptCookies(WebDriver driver, WebDriverWait wait) {
-        try {
-            By consentButtonBy = By.cssSelector(".qc-cmp2-summary-buttons button[mode='primary']");
-            WebElement consentButton = wait.until(ExpectedConditions.elementToBeClickable(consentButtonBy));
-            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", consentButton);
-            wait.until(ExpectedConditions.invisibilityOf(consentButton));
-        } catch (TimeoutException e) {
-            System.out.println("No se encontró el banner de cookies o ya fue aceptado.");
+        // Aumentamos la robustez intentando con varios selectores comunes para banners de cookies.
+        // El wait corto es para no penalizar el rendimiento si el banner no aparece.
+        WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(5));
+        
+        // Lista de selectores a intentar en orden de probabilidad.
+        List<By> selectors = List.of(
+            By.xpath("//button[contains(., 'Aceptar todo')]"),
+            By.xpath("//button[contains(., 'Accept All')]"),
+            By.cssSelector(".qc-cmp2-summary-buttons button[mode='primary']"),
+            By.id("accept-cookies-button"),
+            By.className("accept-cookies")
+        );
+
+        for (By selector : selectors) {
+            try {
+                WebElement consentButton = shortWait.until(ExpectedConditions.elementToBeClickable(selector));
+                ((JavascriptExecutor) driver).executeScript("arguments[0].click();", consentButton);
+                
+                // Esperamos un momento a que el banner desaparezca para evitar problemas de sincronización.
+                wait.until(ExpectedConditions.invisibilityOf(consentButton));
+                
+                System.out.println("Banner de cookies aceptado con el selector: " + selector);
+                return; // Salimos del método si tuvimos éxito.
+            } catch (TimeoutException e) {
+                // No hacemos nada, simplemente probamos el siguiente selector.
+            }
         }
+        
+        System.out.println("No se encontró ningún banner de cookies conocido o ya fue aceptado.");
     }
 
     private void handleScraperError(WebDriver driver, Exception e) {

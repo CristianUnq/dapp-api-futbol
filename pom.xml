@@ -28,6 +28,8 @@
 	</scm>
 	<properties>
 		<java.version>17</java.version>
+		<!-- Target Java release for compilation -->
+		<maven.compiler.release>17</maven.compiler.release>
 	</properties>
 	<dependencies>
 
@@ -150,7 +152,7 @@
 			<plugin>
 				<groupId>org.jacoco</groupId>
 				<artifactId>jacoco-maven-plugin</artifactId>
-				<version>0.8.10</version>
+				<version>0.8.14</version>
 				<executions>
 					<!-- prepare agent before tests -->
 					<execution>
@@ -174,6 +176,15 @@
 						</configuration>
 					</execution>
 				</executions>
+			</plugin>
+			<!-- Ensure compiler plugin uses the temporary release level -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
+				<configuration>
+					<release>${maven.compiler.release}</release>
+				</configuration>
 			</plugin>
 		</plugins>
 	</build>

@@ -30,7 +30,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -167,7 +166,7 @@ public class ScraperPersistence {
                             break;
                         }
                     }
-                    Element nameCell = nameCellIndex >= 0 ? cells.get(nameCellIndex) : cells.get(0);
+                    Element nameCell = nameCellIndex >= 0 ? cells.get(nameCellIndex) : cells.first();
 
                     // Clean and normalize the player name from the anchor text
                     String rawName = playerLinkElement.text().replaceAll("^\\d+\\s*", "").trim();
@@ -180,7 +179,7 @@ public class ScraperPersistence {
                     Optional<Player> existingPlayerOpt = playerRepository.findByNameAndTeam(playerName, team);
                     Player player = existingPlayerOpt.orElseGet(Player::new);
                     // If new player, set name and team now; if existing, we'll update fields
-                    if (!existingPlayerOpt.isPresent()) {
+                    if (existingPlayerOpt.isEmpty()) {
                         player.setName(playerName);
                         player.setTeam(team);
                     }
@@ -306,15 +305,49 @@ public class ScraperPersistence {
         System.out.println("[Scraper] Obteniendo datos de clasificación desde: " + url);
         driver.get(url);
         acceptCookies(driver, wait);
-        // Esperamos por un elemento más estable que el ID dinámico de la tabla.
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("h2.tournament-tables-header")));
+        // Esperamos por un elemento estable; usar presenceOf para evitar fallos por visibilidad/overlays.
+        try {
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("h2.tournament-tables-header")));
+        } catch (TimeoutException te) {
+            System.err.println("[Scraper] Timeout esperando el header de las clasificaciones, intentando continuacion de forma tolerante...");
+        }
 
+        // Intentamos parsear la página y buscar la tabla con múltiples selectores de fallback.
         Document doc = Jsoup.parse(driver.getPageSource());
-        // Selector más específico para asegurar que obtenemos la tabla.
-        Element table = doc.selectFirst("div[id^='standings-'] table");
+        Element table = null;
+        String matchedSelector = null;
+
+        String[] selectors = new String[] {
+            "div[id^='standings-'] table",
+            "table[id^='standings-']",
+            "#standings-24796 table",
+            "table.grid.with-centered-columns",
+            "#tournament-tables div table",
+            "table"
+        };
+
+        // Hacemos un pequeño bucle de reintentos porque la página puede tardar en renderizar partes vía JS.
+        for (int attempt = 0; attempt < 3 && table == null; attempt++) {
+            for (String sel : selectors) {
+                table = doc.selectFirst(sel);
+                if (table != null) {
+                    matchedSelector = sel;
+                    break;
+                }
+            }
+            if (table == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {}
+                doc = Jsoup.parse(driver.getPageSource());
+            }
+        }
+
         if (table == null) {
-             System.err.println("[Scraper] No se pudo encontrar el elemento <table> dentro de la sección de clasificaciones.");
-             return;
+            System.err.println("[Scraper] No se pudo encontrar el elemento <table> dentro de la sección de clasificaciones. Revisar el HTML guardado.");
+            return;
+        } else {
+            System.out.println("[Scraper] Tabla de clasificaciones encontrada usando selector: " + matchedSelector);
         }
 
         for (Element row : table.select("tbody tr")) {
@@ -323,7 +356,7 @@ public class ScraperPersistence {
             if (cells.size() < 9) continue; 
 
             // El nombre del equipo está en la celda 0 dentro de un enlace
-            String teamName = cells.get(0).select("a.team-link").text().trim();
+            String teamName = cells.first().select("a.team-link").text().trim();
             if (teamName.isEmpty()) continue;
 
             Team team = teamRepository.findByName(teamName).orElse(new Team());
@@ -497,11 +530,11 @@ public class ScraperPersistence {
         try {
             TakesScreenshot ts = (TakesScreenshot) driver;
             File source = ts.getScreenshotAs(OutputType.FILE);
-            Path destination = Paths.get("failure-screenshot.png");
+            Path destination = Path.of("failure-screenshot.png");
             Files.copy(source.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
             System.out.println("Screenshot guardado en: " + destination.toAbsolutePath());
 
-            Path htmlPath = Paths.get("failure-page.html");
+            Path htmlPath = Path.of("failure-page.html");
             Files.write(htmlPath, driver.getPageSource().getBytes(StandardCharsets.UTF_8));
             System.out.println("HTML de la página guardado en: " + htmlPath.toAbsolutePath());
         } catch (IOException ex) {

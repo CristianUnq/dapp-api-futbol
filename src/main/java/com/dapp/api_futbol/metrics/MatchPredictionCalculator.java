@@ -236,11 +236,11 @@ public class MatchPredictionCalculator {
         // Generar un resumen de la predicción
         String summary = "";
         if (localWinProbability > visitorWinProbability && localWinProbability > drawProbability) {
-            summary = String.format("Es más probable que %s gane con %.2f%% de probabilidad.", localTeam.getName(), localWinProbability * 100);
+            summary = "Es más probable que %s gane con %.2f%% de probabilidad.".formatted(localTeam.getName(), localWinProbability * 100);
         } else if (visitorWinProbability > localWinProbability && visitorWinProbability > drawProbability) {
-            summary = String.format("Es más probable que %s gane con %.2f%% de probabilidad.", visitorTeam.getName(), visitorWinProbability * 100);
+            summary = "Es más probable que %s gane con %.2f%% de probabilidad.".formatted(visitorTeam.getName(), visitorWinProbability * 100);
         } else if (drawProbability > localWinProbability && drawProbability > visitorWinProbability) {
-            summary = String.format("Es más probable un empate con %.2f%% de probabilidad.", drawProbability * 100);
+            summary = "Es más probable un empate con %.2f%% de probabilidad.".formatted(drawProbability * 100);
         } else {
             summary = "Las probabilidades están muy igualadas.";
         }

@@ -31,7 +31,7 @@ public class QueryHistoryAspect {
      * Define un pointcut que captura todos los métodos públicos en cualquier clase
      * dentro del paquete com.dapp.api_futbol.controller.
      */
-    @Pointcut("execution(public * com.dapp.api_futbol.controller..*(..))")
+    @Pointcut("execution(public * com.dapp.api_futbol.controller..*(..)) || (execution(public * *(..)) && @within(org.springframework.web.bind.annotation.RestController))")
     public void controllerMethods() {}
 
     /**
@@ -67,8 +67,8 @@ public class QueryHistoryAspect {
             return null;
         }
         for (Object arg : args) {
-            if (arg instanceof Principal) {
-                return (Principal) arg;
+            if (arg instanceof Principal principal) {
+                return principal;
             }
         }
         return null;

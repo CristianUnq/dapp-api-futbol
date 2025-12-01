@@ -17,4 +17,10 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
 
     @Query("SELECT m FROM Match m WHERE m.matchDate > :now AND (LOWER(m.homeTeamName) LIKE CONCAT('%', :name, '%') OR LOWER(m.awayTeamName) LIKE CONCAT('%', :name, '%')) ORDER BY m.matchDate ASC")
     List<Match> findUpcomingByTeamName(@Param("name") String name, @Param("now") LocalDateTime now);
+
+    @Query("SELECT m FROM Match m WHERE (LOWER(m.homeTeamName) = LOWER(:a) AND LOWER(m.awayTeamName) = LOWER(:b)) OR (LOWER(m.homeTeamName) = LOWER(:b) AND LOWER(m.awayTeamName) = LOWER(:a)) ORDER BY m.matchDate DESC")
+    List<Match> findHeadToHead(@Param("a") String a, @Param("b") String b);
+
+    @Query("SELECT m FROM Match m WHERE LOWER(m.homeTeamName) = LOWER(:name) OR LOWER(m.awayTeamName) = LOWER(:name)")
+    List<Match> findMatchesByTeamName(@Param("name") String name);
 }

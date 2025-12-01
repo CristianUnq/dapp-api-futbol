@@ -50,8 +50,11 @@ public class SecurityConfig {
                     "/v3/api-docs.yaml",
                     "/auth/register",
                     "/auth/login",
-                    "/h2-console/**"
+                    "/h2-console/**",
+                    "/actuator/**"
                 ).permitAll()
+                // Protect actuator endpoints: require ADMIN role to access monitoring endpoints
+                .requestMatchers("/actuator/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             // Return 401 Unauthorized for unauthenticated requests (REST APIs commonly use 401)

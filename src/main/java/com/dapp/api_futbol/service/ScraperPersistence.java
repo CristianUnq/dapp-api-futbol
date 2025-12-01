@@ -305,15 +305,49 @@ public class ScraperPersistence {
         System.out.println("[Scraper] Obteniendo datos de clasificación desde: " + url);
         driver.get(url);
         acceptCookies(driver, wait);
-        // Esperamos por un elemento más estable que el ID dinámico de la tabla.
-        wait.until(ExpectedConditions.visibilityOfElementLocated(By.cssSelector("h2.tournament-tables-header")));
+        // Esperamos por un elemento estable; usar presenceOf para evitar fallos por visibilidad/overlays.
+        try {
+            wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("h2.tournament-tables-header")));
+        } catch (TimeoutException te) {
+            System.err.println("[Scraper] Timeout esperando el header de las clasificaciones, intentando continuacion de forma tolerante...");
+        }
 
+        // Intentamos parsear la página y buscar la tabla con múltiples selectores de fallback.
         Document doc = Jsoup.parse(driver.getPageSource());
-        // Selector más específico para asegurar que obtenemos la tabla.
-        Element table = doc.selectFirst("div[id^='standings-'] table");
+        Element table = null;
+        String matchedSelector = null;
+
+        String[] selectors = new String[] {
+            "div[id^='standings-'] table",
+            "table[id^='standings-']",
+            "#standings-24796 table",
+            "table.grid.with-centered-columns",
+            "#tournament-tables div table",
+            "table"
+        };
+
+        // Hacemos un pequeño bucle de reintentos porque la página puede tardar en renderizar partes vía JS.
+        for (int attempt = 0; attempt < 3 && table == null; attempt++) {
+            for (String sel : selectors) {
+                table = doc.selectFirst(sel);
+                if (table != null) {
+                    matchedSelector = sel;
+                    break;
+                }
+            }
+            if (table == null) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ignored) {}
+                doc = Jsoup.parse(driver.getPageSource());
+            }
+        }
+
         if (table == null) {
-             System.err.println("[Scraper] No se pudo encontrar el elemento <table> dentro de la sección de clasificaciones.");
-             return;
+            System.err.println("[Scraper] No se pudo encontrar el elemento <table> dentro de la sección de clasificaciones. Revisar el HTML guardado.");
+            return;
+        } else {
+            System.out.println("[Scraper] Tabla de clasificaciones encontrada usando selector: " + matchedSelector);
         }
 
         for (Element row : table.select("tbody tr")) {

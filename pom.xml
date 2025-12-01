@@ -27,9 +27,9 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>17</java.version>
 		<!-- Target Java release for compilation -->
-		<maven.compiler.release>21</maven.compiler.release>
+		<maven.compiler.release>17</maven.compiler.release>
 	</properties>
 	<dependencies>
 

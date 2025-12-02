@@ -1,7 +1,6 @@
 package com.dapp.api_futbol.config;
 
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -9,17 +8,9 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import com.dapp.api_futbol.service.ApiKeyService;
-import com.dapp.api_futbol.security.JwtTokenProvider;
 
 @TestConfiguration
 public class TestSecurityConfig {
-
-    @MockBean
-    private ApiKeyService apiKeyService;
-
-    @MockBean
-    private JwtTokenProvider jwtTokenProvider;
 
     @Bean
     @Primary

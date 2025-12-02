@@ -56,8 +56,11 @@ public class AdvancedMetricsCalculation {
     // Compute z-score for a single value given mean and stddev
     public Double computeZScore(Integer value, double mean, double stddev) {
         if (value == null) return null;
-        if (stddev == 0.0) return null;
-        return (value - mean) / stddev;
+        // If there is no variation (stddev == 0) we return 0.0 as neutral z-score
+        if (stddev == 0.0) return 0.0;
+        double z = (value - mean) / stddev;
+        // Round to 2 decimals for cleaner output
+        return Math.round(z * 100.0) / 100.0;
     }
 
 }

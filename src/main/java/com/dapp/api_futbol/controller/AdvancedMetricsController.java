@@ -4,9 +4,11 @@ import com.dapp.api_futbol.dto.AdvancedMetricsDTO;
 import com.dapp.api_futbol.service.TeamMetricsService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequestMapping("/api")
 public class AdvancedMetricsController {
 
     private final TeamMetricsService teamMetricsService;
@@ -17,7 +19,7 @@ public class AdvancedMetricsController {
 
     // User-facing advanced team metrics (moved out of /actuator).
     // This endpoint is for application users; actuator endpoints remain under /actuator/**.
-    @GetMapping("/advanced-metrics")
+    @GetMapping("advanced-metrics")
     public ResponseEntity<AdvancedMetricsDTO> getAdvancedMetrics() {
         AdvancedMetricsDTO metrics = teamMetricsService.getAdvancedMetrics();
         return ResponseEntity.ok(metrics);

@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 
 import com.dapp.api_futbol.response.ResponseObject;
 
@@ -40,6 +41,14 @@ public class GlobalExceptionHandler {
         logger.error("Error al conectar a la Api: {}", ex.getMessage(), ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ResponseObject("Error al obtener datos de la Api", HttpStatus.INTERNAL_SERVER_ERROR.value()));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ResponseObject> handleMissingRequestParam(MissingServletRequestParameterException ex) {
+        String param = ex.getParameterName();
+        String message = String.format("Falta el parámetro requerido '%s'", param);
+        logger.warn("Parámetro faltante: {}", param);
+        return ResponseEntity.badRequest().body(new ResponseObject(message, HttpStatus.BAD_REQUEST.value()));
     }
 
     @ExceptionHandler(Exception.class)

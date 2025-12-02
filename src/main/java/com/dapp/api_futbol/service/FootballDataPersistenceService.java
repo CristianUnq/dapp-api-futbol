@@ -19,7 +19,7 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 
 @Service
-public class FootballDataPersistence {
+public class FootballDataPersistenceService {
 
     @Value("${football.data.base_url}")
     private String BASE_URL;
@@ -28,7 +28,7 @@ public class FootballDataPersistence {
 
     private final MatchRepository matchRepository;
 
-    public FootballDataPersistence(MatchRepository matchRepository) {
+    public FootballDataPersistenceService(MatchRepository matchRepository) {
         this.matchRepository = matchRepository;
     }
 
@@ -47,11 +47,8 @@ public class FootballDataPersistence {
         if (!matchesArray.isArray()) return;
 
         for (JsonNode matchNode : matchesArray) {
-            // Saves the matches to the database
             Integer matchId = matchNode.get("id").asInt();
 
-        
-            // Evita duplicados buscando si el partido ya existe
             Optional<Match> existingMatch = matchRepository.findByFootballDataId(matchId);
             if (existingMatch.isPresent()) continue;
 
@@ -60,7 +57,6 @@ public class FootballDataPersistence {
 
             Match match = new Match();
             match.setFootballDataId(matchId);
-            // Save team names as-is (no relation to Team entity)
             match.setHomeTeamName(homeTeamName);
             match.setAwayTeamName(awayTeamName);
 
@@ -79,8 +75,6 @@ public class FootballDataPersistence {
             matchRepository.save(match);
         }
     }
-
-    
 
     private JsonNode connectionToApiFutbolData(String endpoint) {
         HttpClient client = HttpClient.newHttpClient();

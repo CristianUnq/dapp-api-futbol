@@ -48,7 +48,7 @@ import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 
 @Service
-public class ScraperPersistence {
+public class ScraperPersistenceService {
 
     @Value("${who.scored.base_url}")
     private String BASE_URL;
@@ -60,16 +60,11 @@ public class ScraperPersistence {
     private final TeamRepository teamRepository;
     private final PlayerRepository playerRepository;
 
-    public ScraperPersistence(TeamRepository teamRepository, PlayerRepository playerRepository) {
+    public ScraperPersistenceService(TeamRepository teamRepository, PlayerRepository playerRepository) {
         this.teamRepository = teamRepository;
         this.playerRepository = playerRepository;
     }
 
-    // Use a fixedRate for testing so the first run happens shortly after startup
-    // and next runs are scheduled every 60_000ms. When moving to production you
-    // can switch back to a cron expression like "0 0/1 * * * ?" or a daily cron.
-    // Ejecuta cada 90 segundos (1.5 minutos). fixedRate mide en milisegundos.
-    
     @Scheduled(initialDelay = 0, fixedRate = 24 * 60 * 60 * 1000)
     @Transactional
     public void scrapeAndSaveChampionsLeagueTeamsAndPlayers() {
@@ -493,8 +488,8 @@ public class ScraperPersistence {
         
         // Lista de selectores a intentar en orden de probabilidad.
         List<By> selectors = List.of(
-            By.xpath("//button[contains(., 'Aceptar todo')]"),
-            By.xpath("//button[contains(., 'Accept All')]"),
+            By.xpath("//button[contains(., 'Aceptar todo')]") ,
+            By.xpath("//button[contains(., 'Accept All')]") ,
             By.cssSelector(".qc-cmp2-summary-buttons button[mode='primary']"),
             By.id("accept-cookies-button"),
             By.className("accept-cookies")
@@ -541,4 +536,5 @@ public class ScraperPersistence {
             System.err.println("No se pudo guardar el screenshot o el HTML: " + ex.getMessage());
         }
     }
+
 }

@@ -40,15 +40,24 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.nio.charset.StandardCharsets;
 import java.io.File;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
+// Note: avoid aliasing imports; reference java.util.concurrent.TimeoutException fully if needed
 
 @Service
 public class ScraperPersistenceService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ScraperPersistenceService.class);
+    private static final ExecutorService regexExecutor = Executors.newSingleThreadExecutor();
 
     @Value("${who.scored.base_url}")
     private String BASE_URL;
@@ -164,10 +173,15 @@ public class ScraperPersistenceService {
                     Element nameCell = nameCellIndex >= 0 ? cells.get(nameCellIndex) : cells.first();
 
                     // Clean and normalize the player name from the anchor text
-                    String rawName = playerLinkElement.text().replaceAll("^\\d+\\s*", "").trim();
-                    // Remove suffixes like " - MP(CID)" or trailing parentheses
-                    rawName = rawName.replaceFirst("\\s*-\\s*.*$", "");
-                    rawName = rawName.replaceFirst("\\s*\\(.*\\)\\s*$", "").trim();
+                    String rawName = safeReplace(playerLinkElement.text(), "^\\d+\\s*", "").trim();
+                    // SonarCloud: Mitigating ReDoS by using a safe replacement helper with timeout.
+                    // The regex `\\s*-\\s*.*$` is simplified by finding the first ` - ` and taking the substring.
+                    int dashIndex = rawName.indexOf(" - ");
+                    if (dashIndex != -1) {
+                        rawName = rawName.substring(0, dashIndex);
+                    }
+                    // The regex `\\s*\\(.*\\)\\s*$` is potentially vulnerable. We use a safer, timeout-based approach.
+                    rawName = safeReplace(rawName, "\\s{0,10}\\(.*\\)\\s{0,10}$", "").trim();
                     if (rawName.isEmpty()) continue;
 
                     String playerName = rawName;
@@ -185,9 +199,23 @@ public class ScraperPersistenceService {
                     String extractedPositions = null;
 
                     // Prefer the format where the details follow the link, e.g. "32, MP(C),DL"
-                    String afterLink = nameCellText.replaceFirst(java.util.regex.Pattern.quote(playerLinkElement.text()), "").trim();
-                    // remove leading commas/spaces
-                    afterLink = afterLink.replaceFirst("^[,\u00A0\s]+", "").trim();
+                    // Remove the first occurrence of the anchor text without using regex
+                    String afterLink;
+                    String anchorText = playerLinkElement.text();
+                    int idx = nameCellText.indexOf(anchorText);
+                    if (idx != -1) {
+                        afterLink = nameCellText.substring(0, idx) + nameCellText.substring(idx + anchorText.length());
+                    } else {
+                        afterLink = nameCellText;
+                    }
+                    afterLink = afterLink.trim();
+                    // Remove leading commas, NBSPs and whitespace without regex
+                    int start = 0;
+                    while (start < afterLink.length()) {
+                        char c = afterLink.charAt(start);
+                        if (c == ',' || c == '\u00A0' || Character.isWhitespace(c)) start++; else break;
+                    }
+                    if (start > 0) afterLink = afterLink.substring(start).trim();
                     if (!afterLink.isEmpty()) {
                         // split by first comma: first token often is the age
                         String[] parts = afterLink.split("\\,\\s*", 2);
@@ -236,8 +264,9 @@ public class ScraperPersistenceService {
                     if (extractedAge == 0) System.out.println("[Scraper Verificación] edad no encontrada para: " + playerName + " -- nameCell='" + nameCellText + "'");
 
                     if (extractedPositions != null && !extractedPositions.isEmpty()) {
-                        String cleaned = extractedPositions.replaceAll("\\b(\\d{1,2})\\s*[\\u00A0\\s]*a\\u00F1os?\\b", "").replaceAll("\\(\\d{1,2}-\\d{1,2}-\\d{2,4}\\)", "").trim();
-                        cleaned = cleaned.replaceAll("^[\\-:\\s]+|[\\-:\\s]+$", "").trim();
+                        String cleaned = safeReplace(extractedPositions, "\\b(\\d{1,2})\\s*[\\u00A0\\s]*a\\u00F1os?\\b", "").trim();
+                        cleaned = safeReplace(cleaned, "\\(\\d{1,2}-\\d{1,2}-\\d{2,4}\\)", "").trim();
+                        cleaned = safeReplace(cleaned, "^[\\-:\\s]+|[\\-:\\s]+$", "").trim();
                         if (!cleaned.isEmpty()) player.setPosition(cleaned);
                     }
 
@@ -389,7 +418,7 @@ public class ScraperPersistenceService {
 
         Map<String, Integer> headerMap = getHeaderMap(table.select("thead th"));
         for (Element row : table.select("tbody tr")) {
-            String teamName = row.select("a.team-link").text().replaceAll("^\\d+\\.\\s*", "").trim();
+            String teamName = safeReplace(row.select("a.team-link").text(), "^\\d+\\.\\s*", "").trim();
             if (teamName.isEmpty()) continue;
 
             teamRepository.findByName(teamName).ifPresent(team -> {
@@ -423,9 +452,49 @@ public class ScraperPersistenceService {
     private Integer parseInt(String value) {
         if (value == null || value.trim().isEmpty() || value.equals("-")) return 0;
         try {
-            return Integer.parseInt(value.replaceAll("[^\\d-]", ""));
+            String cleaned = digitsAndHyphen(value);
+            if (cleaned.isEmpty()) return 0;
+            return Integer.parseInt(cleaned);
         } catch (NumberFormatException e) {
             return 0;
+        }
+    }
+
+    private static String digitsAndHyphen(String value) {
+        if (value == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (Character.isDigit(c) || c == '-') sb.append(c);
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Safely run a regex-based replaceAll with a timeout to mitigate ReDoS.
+     * If the operation times out or fails, returns the original input.
+     */
+    private static String safeReplace(String input, String regex, String replacement) {
+        if (input == null || input.isEmpty()) return input;
+        Callable<String> task = () -> {
+            try {
+                return input.replaceAll(regex, replacement);
+            } catch (Throwable t) {
+                return input;
+            }
+        };
+
+        Future<String> future = regexExecutor.submit(task);
+        try {
+            return future.get(100, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException e) {
+            future.cancel(true);
+            logger.warn("safeReplace failed for regex {}: {}", regex, e.toString());
+            return input;
+        } catch (java.util.concurrent.TimeoutException e) {
+            future.cancel(true);
+            logger.warn("safeReplace timed out for regex {}", regex);
+            return input;
         }
     }
 

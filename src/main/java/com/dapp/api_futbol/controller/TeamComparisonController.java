@@ -32,7 +32,6 @@ public class TeamComparisonController {
     @GetMapping("/compare-teams")
     public ResponseEntity<ComparisonResultDTO> compareTeams(@RequestParam("teamA") String teamA,
                                                             @RequestParam("teamB") String teamB) {
-        // Los parámetros son obligatorios; si faltan, Spring lanzará MissingServletRequestParameterException
         ComparisonResultDTO result = teamComparisonService.compareTeamsByName(teamA.trim(), teamB.trim());
         return ResponseEntity.ok(result);
     }

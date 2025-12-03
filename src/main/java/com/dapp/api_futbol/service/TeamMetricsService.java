@@ -6,7 +6,6 @@ import com.dapp.api_futbol.model.Team;
 import com.dapp.api_futbol.repository.TeamRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Service

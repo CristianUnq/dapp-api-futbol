@@ -27,11 +27,6 @@ public class MatchService {
         this.predictionCalculator = predictionCalculator;
     }
 
-    /**
-     * Devuelve los próximos partidos de un equipo (status == TIMED) buscando
-     * por coincidencia parcial del nombre en homeTeamName o awayTeamName.
-     * Retorna un ResponseObject con los datos, mensaje y status.
-     */
     public ResponseObject getNextMatchesOf(String teamName) {
         if (teamName == null || teamName.trim().isEmpty()) {
             return new ResponseObject("Nombre de equipo inválido", HttpStatus.BAD_REQUEST.value());
@@ -43,13 +38,6 @@ public class MatchService {
         return new ResponseObject(nextMatches, "Próximos partidos encontrados exitosamente", HttpStatus.OK.value());
     }
 
-    /**
-     * Genera una predicción para un partido dado su ID, comparando las estadísticas de los equipos.
-     * @param idMatch El ID del partido para el cual generar la predicción.
-     * @return Un MatchPredictionDTO con las probabilidades de resultado.
-     * @throws MatchNotFoundException si el partido no se encuentra.
-     * @throws TeamNotFoundException si alguno de los equipos del partido no se encuentra.
-     */
     public MatchPredictionDTO getPredictionFrom(Long idMatch) {
         Match match = matchRepository.findById(idMatch)
                 .orElseThrow(() -> new MatchNotFoundException(idMatch.toString()));

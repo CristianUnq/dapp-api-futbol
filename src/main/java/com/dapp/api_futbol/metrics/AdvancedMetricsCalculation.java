@@ -10,11 +10,6 @@ import java.util.List;
 @Component
 public class AdvancedMetricsCalculation {
 
-    /**
-     * Compute categorical team metrics (grades S..F) from raw Team objects.
-     * Returns a list of TeamMetricDTO populated with the original numeric fields
-     * and the computed categorical grades.
-     */
     public List<TeamMetricDTO> computeTeamMetrics(List<Team> teams) {
         List<TeamMetricDTO> summary = new ArrayList<>();
         if (teams == null || teams.isEmpty()) return summary;
@@ -31,25 +26,21 @@ public class AdvancedMetricsCalculation {
             TeamMetricDTO dto = new TeamMetricDTO();
             dto.setId(Long.valueOf(t.getId()));
             dto.setName(t.getName());
-            dto.setPuntos(t.getPuntos());
-            dto.setGolesAFavor(t.getGolesAFavor());
-            dto.setGolesEnContra(t.getGolesEnContra());
-            dto.setDiferenciaDeGoles(t.getDiferenciaDeGoles());
 
-            int pj = t.getPartidosJugados() != null && t.getPartidosJugados() > 0 ? t.getPartidosJugados() : 1;
-            double gf = t.getGolesAFavor() != null ? t.getGolesAFavor() : 0.0;
-            double ga = t.getGolesEnContra() != null ? t.getGolesEnContra() : 0.0;
-            double points = t.getPuntos() != null ? t.getPuntos() : 0.0;
-            double diff = t.getDiferenciaDeGoles() != null ? t.getDiferenciaDeGoles() : 0.0;
+            int pj = t.getMatchsPlayed() != null && t.getMatchsPlayed() > 0 ? t.getMatchsPlayed() : 1;
+            double gf = t.getGoalsInFavor() != null ? t.getGoalsInFavor() : 0.0;
+            double ga = t.getGoalsAgainst() != null ? t.getGoalsAgainst() : 0.0;
+            double points = t.getPoints() != null ? t.getPoints() : 0.0;
+            double diff = t.getGoalsDifference() != null ? t.getGoalsDifference() : 0.0;
 
             double golesPerMatch = gf / pj;
-            double tirosPp = parseDecimal(t.getTirosPp());
-            double possession = parsePercent(t.getPosesion());
-            double passAcc = parsePercent(t.getAciertoPase());
-            double aerials = parseDecimal(t.getAereos());
+            double tirosPp = parseDecimal(t.getShotsPerMatch());
+            double possession = parsePercent(t.getPossesion());
+            double passAcc = parsePercent(t.getPassAccuracy());
+            double aerials = parseDecimal(t.getAerialDuels());
             double rating = parseDecimal(t.getRating());
-            double wins = t.getPartidosGanados() != null ? t.getPartidosGanados() : 0.0;
-            double losses = t.getPartidosPerdidos() != null ? t.getPartidosPerdidos() : 0.0;
+            double wins = t.getMatchsWon() != null ? t.getMatchsWon() : 0.0;
+            double losses = t.getMatchsLost() != null ? t.getMatchsLost() : 0.0;
 
             double finishingScore = golesPerMatch * 0.6 + (rating > 0 ? (rating / 10.0) * 0.4 : 0.0);
             double longShotScore = tirosPp;

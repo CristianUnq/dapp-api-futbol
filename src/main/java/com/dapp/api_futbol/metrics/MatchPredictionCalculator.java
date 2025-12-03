@@ -33,14 +33,14 @@ public class MatchPredictionCalculator {
 
         double localRating = Double.parseDouble(localTeam.getRating());
         double visitorRating = Double.parseDouble(visitorTeam.getRating());
-        double localAereos = Double.parseDouble(localTeam.getAereos());
-        double visitorAereos = Double.parseDouble(visitorTeam.getAereos());
-        double localPosesion = Double.parseDouble(localTeam.getPosesion());
-        double visitorPosesion = Double.parseDouble(visitorTeam.getPosesion());
-        double localAciertoPase = Double.parseDouble(localTeam.getAciertoPase());
-        double visitorAciertoPase = Double.parseDouble(visitorTeam.getAciertoPase());
-        double localTirospp = Double.parseDouble(localTeam.getTirosPp());
-        double visitorTirospp = Double.parseDouble(visitorTeam.getTirosPp());
+        double localAereos = Double.parseDouble(localTeam.getAerialDuels());
+        double visitorAereos = Double.parseDouble(visitorTeam.getAerialDuels());
+        double localPosesion = Double.parseDouble(localTeam.getPossesion());
+        double visitorPosesion = Double.parseDouble(visitorTeam.getPossesion());
+        double localAciertoPase = Double.parseDouble(localTeam.getPassAccuracy());
+        double visitorAciertoPase = Double.parseDouble(visitorTeam.getPassAccuracy());
+        double localTirospp = Double.parseDouble(localTeam.getShotsPerMatch());
+        double visitorTirospp = Double.parseDouble(visitorTeam.getShotsPerMatch());
 
         // 1. Comparar Rating
         if (localTeam.getRating() != null && visitorTeam.getRating() != null) {
@@ -56,12 +56,12 @@ public class MatchPredictionCalculator {
         }
 
         // 2. Comparar Puntos
-        if (localTeam.getPuntos() != null && visitorTeam.getPuntos() != null) {
-            if (localTeam.getPuntos() > visitorTeam.getPuntos()) {
+        if (localTeam.getPoints() != null && visitorTeam.getPoints() != null) {
+            if (localTeam.getPoints() > visitorTeam.getPoints()) {
                 localWinProbability += POINTS_WEIGHT;
                 visitorWinProbability -= POINTS_WEIGHT / 2;
                 drawProbability -= POINTS_WEIGHT / 2;
-            } else if (visitorTeam.getPuntos() > localTeam.getPuntos()) {
+            } else if (visitorTeam.getPoints() > localTeam.getPoints()) {
                 visitorWinProbability += POINTS_WEIGHT;
                 localWinProbability -= POINTS_WEIGHT / 2;
                 drawProbability -= POINTS_WEIGHT / 2;
@@ -69,12 +69,12 @@ public class MatchPredictionCalculator {
         }
 
         // 3. Comparar Diferencia de Goles
-        if (localTeam.getDiferenciaDeGoles() != null && visitorTeam.getDiferenciaDeGoles() != null) {
-            if (localTeam.getDiferenciaDeGoles() > visitorTeam.getDiferenciaDeGoles()) {
+        if (localTeam.getGoalsDifference() != null && visitorTeam.getGoalsDifference() != null) {
+            if (localTeam.getGoalsDifference() > visitorTeam.getGoalsDifference()) {
                 localWinProbability += GOALS_DIFF_WEIGHT;
                 visitorWinProbability -= GOALS_DIFF_WEIGHT / 2;
                 drawProbability -= GOALS_DIFF_WEIGHT / 2;
-            } else if (visitorTeam.getDiferenciaDeGoles() > localTeam.getDiferenciaDeGoles()) {
+            } else if (visitorTeam.getGoalsDifference() > localTeam.getGoalsDifference()) {
                 visitorWinProbability += GOALS_DIFF_WEIGHT;
                 localWinProbability -= GOALS_DIFF_WEIGHT / 2;
                 drawProbability -= GOALS_DIFF_WEIGHT / 2;
@@ -82,12 +82,12 @@ public class MatchPredictionCalculator {
         }
 
         // 4. Comparar Partidos Ganados
-        if (localTeam.getPartidosGanados() != null && visitorTeam.getPartidosGanados() != null) {
-            if (localTeam.getPartidosGanados() > visitorTeam.getPartidosGanados()) {
+        if (localTeam.getMatchsWon() != null && visitorTeam.getMatchsWon() != null) {
+            if (localTeam.getMatchsWon() > visitorTeam.getMatchsWon()) {
                 localWinProbability += WINS_WEIGHT;
                 visitorWinProbability -= WINS_WEIGHT / 2;
                 drawProbability -= WINS_WEIGHT / 2;
-            } else if (visitorTeam.getPartidosGanados() > localTeam.getPartidosGanados()) {
+            } else if (visitorTeam.getMatchsWon() > localTeam.getMatchsWon()) {
                 visitorWinProbability += WINS_WEIGHT;
                 localWinProbability -= WINS_WEIGHT / 2;
                 drawProbability -= WINS_WEIGHT / 2;
@@ -95,12 +95,12 @@ public class MatchPredictionCalculator {
         }
 
         // 5. Comparar Partidos Empatados (mayor cantidad de empates puede indicar una tendencia al empate)
-        if (localTeam.getPartidosEmpatados() != null && visitorTeam.getPartidosEmpatados() != null) {
-            if (localTeam.getPartidosEmpatados() > visitorTeam.getPartidosEmpatados()) {
+        if (localTeam.getMatchsDrew() != null && visitorTeam.getMatchsDrew() != null) {
+            if (localTeam.getMatchsDrew() > visitorTeam.getMatchsDrew()) {
                 drawProbability += DRAWS_WEIGHT;
                 localWinProbability -= DRAWS_WEIGHT / 4; // Ajuste menor en victorias
                 visitorWinProbability -= DRAWS_WEIGHT / 4; 
-            } else if (visitorTeam.getPartidosEmpatados() > localTeam.getPartidosEmpatados()) {
+            } else if (visitorTeam.getMatchsDrew() > localTeam.getMatchsDrew()) {
                 drawProbability += DRAWS_WEIGHT;
                 localWinProbability -= DRAWS_WEIGHT / 4;
                 visitorWinProbability -= DRAWS_WEIGHT / 4;
@@ -108,12 +108,12 @@ public class MatchPredictionCalculator {
         }
 
         // 6. Comparar Partidos Perdidos (menos perdidos = mejor equipo)
-        if (localTeam.getPartidosPerdidos() != null && visitorTeam.getPartidosPerdidos() != null) {
-            if (localTeam.getPartidosPerdidos() < visitorTeam.getPartidosPerdidos()) { // Menos pérdidas es positivo
+        if (localTeam.getMatchsLost() != null && visitorTeam.getMatchsLost() != null) {
+            if (localTeam.getMatchsLost() < visitorTeam.getMatchsLost()) { // Menos pérdidas es positivo
                 localWinProbability += LOSSES_WEIGHT;
                 visitorWinProbability -= LOSSES_WEIGHT / 2;
                 drawProbability -= LOSSES_WEIGHT / 2;
-            } else if (visitorTeam.getPartidosPerdidos() < localTeam.getPartidosPerdidos()) {
+            } else if (visitorTeam.getMatchsLost() < localTeam.getMatchsLost()) {
                 visitorWinProbability += LOSSES_WEIGHT;
                 localWinProbability -= LOSSES_WEIGHT / 2;
                 drawProbability -= LOSSES_WEIGHT / 2;
@@ -121,12 +121,12 @@ public class MatchPredictionCalculator {
         }
 
         // 7. Comparar Goles a Favor
-        if (localTeam.getGolesAFavor() != null && visitorTeam.getGolesAFavor() != null) {
-            if (localTeam.getGolesAFavor() > visitorTeam.getGolesAFavor()) {
+        if (localTeam.getGoalsInFavor() != null && visitorTeam.getGoalsInFavor() != null) {
+            if (localTeam.getGoalsInFavor() > visitorTeam.getGoalsInFavor()) {
                 localWinProbability += GOALS_FOR_WEIGHT;
                 visitorWinProbability -= GOALS_FOR_WEIGHT / 2;
                 drawProbability -= GOALS_FOR_WEIGHT / 2;
-            } else if (visitorTeam.getGolesAFavor() > localTeam.getGolesAFavor()) {
+            } else if (visitorTeam.getGoalsInFavor() > localTeam.getGoalsInFavor()) {
                 visitorWinProbability += GOALS_FOR_WEIGHT;
                 localWinProbability -= GOALS_FOR_WEIGHT / 2;
                 drawProbability -= GOALS_FOR_WEIGHT / 2;
@@ -134,12 +134,12 @@ public class MatchPredictionCalculator {
         }
 
         // 8. Comparar Goles en Contra (menos goles en contra = mejor defensa)
-        if (localTeam.getGolesEnContra() != null && visitorTeam.getGolesEnContra() != null) {
-            if (localTeam.getGolesEnContra() < visitorTeam.getGolesEnContra()) { // Menos goles en contra es positivo
+        if (localTeam.getGoalsAgainst() != null && visitorTeam.getGoalsAgainst() != null) {
+            if (localTeam.getGoalsAgainst() < visitorTeam.getGoalsAgainst()) { // Menos goles en contra es positivo
                 localWinProbability += GOALS_AGAINST_WEIGHT;
                 visitorWinProbability -= GOALS_AGAINST_WEIGHT / 2;
                 drawProbability -= GOALS_AGAINST_WEIGHT / 2;
-            } else if (visitorTeam.getGolesEnContra() < localTeam.getGolesEnContra()) {
+            } else if (visitorTeam.getGoalsAgainst() < localTeam.getGoalsAgainst()) {
                 visitorWinProbability += GOALS_AGAINST_WEIGHT;
                 localWinProbability -= GOALS_AGAINST_WEIGHT / 2;
                 drawProbability -= GOALS_AGAINST_WEIGHT / 2;
@@ -147,7 +147,7 @@ public class MatchPredictionCalculator {
         }
 
         // 9. Comparar Tiros pp (Tiros por partido)
-        if (localTeam.getTirosPp() != null && visitorTeam.getTirosPp() != null) {
+        if (localTeam.getShotsPerMatch() != null && visitorTeam.getShotsPerMatch() != null) {
             if (localTirospp > visitorTirospp) {
                 localWinProbability += SHOTS_PP_WEIGHT;
                 visitorWinProbability -= SHOTS_PP_WEIGHT / 2;
@@ -160,7 +160,7 @@ public class MatchPredictionCalculator {
         }
 
         // 10. Comparar Posesión
-        if (localTeam.getPosesion() != null && visitorTeam.getPosesion() != null) {
+        if (localTeam.getPossesion() != null && visitorTeam.getPossesion() != null) {
             if (localPosesion > visitorPosesion) {
                 localWinProbability += POSSESSION_WEIGHT;
                 visitorWinProbability -= POSSESSION_WEIGHT / 2;
@@ -173,7 +173,7 @@ public class MatchPredictionCalculator {
         }
 
         // 11. Comparar Acierto de Pases
-        if (localTeam.getAciertoPase() != null && visitorTeam.getAciertoPase() != null) {
+        if (localTeam.getPassAccuracy() != null && visitorTeam.getPassAccuracy() != null) {
             if (localAciertoPase > visitorAciertoPase) {
                 localWinProbability += PASS_ACCURACY_WEIGHT;
                 visitorWinProbability -= PASS_ACCURACY_WEIGHT / 2;
@@ -186,7 +186,7 @@ public class MatchPredictionCalculator {
         }
 
         // 12. Comparar Aéreos Ganados
-        if (localTeam.getAereos() != null && visitorTeam.getAereos() != null) {
+        if (localTeam.getAerialDuels() != null && visitorTeam.getAerialDuels() != null) {
             if (localAereos > visitorAereos) {
                 localWinProbability += AERIALS_WEIGHT;
                 visitorWinProbability -= AERIALS_WEIGHT / 2;

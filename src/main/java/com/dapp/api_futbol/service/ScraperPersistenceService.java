@@ -388,14 +388,14 @@ public class ScraperPersistenceService {
 
             // Accedemos a los datos por el índice de la columna, que es más robusto.
             // J=1, G=2, E=3, P=4, GF=5, GC=6, DG=7, Pts=8 (índices basados en 0)
-            team.setPartidosJugados(parseInt(cells.get(1).text()));
-            team.setPartidosGanados(parseInt(cells.get(2).text()));
-            team.setPartidosEmpatados(parseInt(cells.get(3).text()));
-            team.setPartidosPerdidos(parseInt(cells.get(4).text()));
-            team.setGolesAFavor(parseInt(cells.get(5).text()));
-            team.setGolesEnContra(parseInt(cells.get(6).text()));
-            team.setDiferenciaDeGoles(parseInt(cells.get(7).text()));
-            team.setPuntos(parseInt(cells.get(8).text()));
+            team.setMatchsPlayed(parseInt(cells.get(1).text()));
+            team.setMatchsWon(parseInt(cells.get(2).text()));
+            team.setMatchsDrew(parseInt(cells.get(3).text()));
+            team.setMatchsLost(parseInt(cells.get(4).text()));
+            team.setGoalsInFavor(parseInt(cells.get(5).text()));
+            team.setGoalsAgainst(parseInt(cells.get(6).text()));
+            team.setGoalsDifference(parseInt(cells.get(7).text()));
+            team.setPoints(parseInt(cells.get(8).text()));
 
             teamRepository.save(team);
         }
@@ -422,10 +422,10 @@ public class ScraperPersistenceService {
             if (teamName.isEmpty()) continue;
 
             teamRepository.findByName(teamName).ifPresent(team -> {
-                team.setTirosPp(getCellText(row, headerMap, "tiros pp"));
-                team.setPosesion(getCellText(row, headerMap, "posesion%"));
-                team.setAciertoPase(getCellText(row, headerMap, "aciertopase%"));
-                team.setAereos(getCellText(row, headerMap, "aéreos"));
+                team.setShotsPerMatch(getCellText(row, headerMap, "tiros pp"));
+                team.setPossesion(getCellText(row, headerMap, "posesion%"));
+                team.setPassAccuracy(getCellText(row, headerMap, "aciertopase%"));
+                team.setAerialDuels(getCellText(row, headerMap, "aéreos"));
                 team.setRating(getCellText(row, headerMap, "rating"));
                 teamRepository.save(team);
             });

@@ -85,8 +85,8 @@ public class ComparisonCalculation {
     }
 
     private double[] computeProbFromPoints(Team a, Team b) {
-        Double pa = a.getPuntos() != null ? a.getPuntos().doubleValue() : 0.0;
-        Double pb = b.getPuntos() != null ? b.getPuntos().doubleValue() : 0.0;
+        Double pa = a.getPoints() != null ? a.getPoints().doubleValue() : 0.0;
+        Double pb = b.getPoints() != null ? b.getPoints().doubleValue() : 0.0;
         double sum = pa + pb;
         if (sum <= 0.0) return new double[]{0.33, 0.33, 0.34};
         double pA = pa / sum;

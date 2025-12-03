@@ -12,18 +12,18 @@ public class Team {
     @Column(nullable = false, unique = true)
     private String name;
 
-    private Integer partidosJugados;
-    private Integer partidosGanados;
-    private Integer partidosEmpatados;
-    private Integer partidosPerdidos;
-    private Integer golesAFavor;
-    private Integer golesEnContra;
-    private Integer diferenciaDeGoles;
-    private Integer puntos;
-    private String tirosPp;
-    private String posesion;
-    private String aciertoPase;
-    private String aereos;
+    private Integer matchsPlayed;
+    private Integer matchsWon;
+    private Integer matchsDrew;
+    private Integer matchsLost;
+    private Integer goalsInFavor;
+    private Integer goalsAgainst;
+    private Integer goalsDifference;
+    private Integer points;
+    private String shotsPerMatch;
+    private String possesion;
+    private String passAccuracy;
+    private String aerialDuels;
     private String rating;
 
     @OneToMany(mappedBy = "team")
@@ -41,100 +41,100 @@ public class Team {
         return name;
     }
 
-    public Integer getPartidosJugados() {
-        return partidosJugados;
+    public Integer getMatchsPlayed() {
+        return matchsPlayed;
     }
 
-    public void setPartidosJugados(Integer partidosJugados) {
-        this.partidosJugados = partidosJugados;
+    public void setMatchsPlayed(Integer matchsPlayed) {
+        this.matchsPlayed = matchsPlayed;
     }
 
-    public Integer getPartidosGanados() {
-        return partidosGanados;
+    public Integer getMatchsWon() {
+        return matchsWon;
     }
 
-    public void setPartidosGanados(Integer partidosGanados) {
-        this.partidosGanados = partidosGanados;
+    public void setMatchsWon(Integer matchsWon) {
+        this.matchsWon = matchsWon;
     }
 
-    public Integer getPartidosEmpatados() {
-        return partidosEmpatados;
+    public Integer getMatchsDrew() {
+        return matchsDrew;
     }
 
-    public void setPartidosEmpatados(Integer partidosEmpatados) {
-        this.partidosEmpatados = partidosEmpatados;
+    public void setMatchsDrew(Integer matchsDrew) {
+        this.matchsDrew = matchsDrew;
     }
 
-    public Integer getPartidosPerdidos() {
-        return partidosPerdidos;
+    public Integer getMatchsLost() {
+        return matchsLost;
     }
 
-    public void setPartidosPerdidos(Integer partidosPerdidos) {
-        this.partidosPerdidos = partidosPerdidos;
+    public void setMatchsLost(Integer matchsLost) {
+        this.matchsLost = matchsLost;
     }
 
-    public Integer getGolesAFavor() {
-        return golesAFavor;
+    public Integer getGoalsInFavor() {
+        return goalsInFavor;
     }
 
-    public void setGolesAFavor(Integer golesAFavor) {
-        this.golesAFavor = golesAFavor;
+    public void setGoalsInFavor(Integer goalsInFavor) {
+        this.goalsInFavor = goalsInFavor;
     }
 
-    public Integer getGolesEnContra() {
-        return golesEnContra;
+    public Integer getGoalsAgainst() {
+        return goalsAgainst;
     }
 
-    public void setGolesEnContra(Integer golesEnContra) {
-        this.golesEnContra = golesEnContra;
+    public void setGoalsAgainst(Integer goalsAgainst) {
+        this.goalsAgainst = goalsAgainst;
     }
 
-    public Integer getDiferenciaDeGoles() {
-        return diferenciaDeGoles;
+    public Integer getGoalsDifference() {
+        return goalsDifference;
     }
 
-    public void setDiferenciaDeGoles(Integer diferenciaDeGoles) {
-        this.diferenciaDeGoles = diferenciaDeGoles;
+    public void setGoalsDifference(Integer goalsDifference) {
+        this.goalsDifference = goalsDifference;
     }
 
-    public Integer getPuntos() {
-        return puntos;
+    public Integer getPoints() {
+        return points;
     }
 
-    public void setPuntos(Integer puntos) {
-        this.puntos = puntos;
+    public void setPoints(Integer points) {
+        this.points = points;
     }
 
-    public String getTirosPp() {
-        return tirosPp;
+    public String getShotsPerMatch() {
+        return shotsPerMatch;
     }
 
-    public void setTirosPp(String tirosPp) {
-        this.tirosPp = tirosPp;
+    public void setShotsPerMatch(String shotsPerMatch) {
+        this.shotsPerMatch = shotsPerMatch;
     }
 
-    public String getPosesion() {
-        return posesion;
+    public String getPossesion() {
+        return possesion;
     }
 
-    public void setPosesion(String posesion) {
-        this.posesion = posesion;
+    public void setPossesion(String possesion) {
+        this.possesion = possesion;
     }
 
-    public String getAciertoPase() {
-        return aciertoPase;
+    public String getPassAccuracy() {
+        return passAccuracy;
     }
 
-    public void setAciertoPase(String aciertoPase) {
-        this.aciertoPase = aciertoPase;
+    public void setPassAccuracy(String passAccuracy) {
+        this.passAccuracy = passAccuracy;
     }
 
-    public String getAereos() {
-        return aereos;
+    public String getAerialDuels() {
+        return aerialDuels;
     }
 
-    public void setAereos(String aereos) {
-        this.aereos = aereos;
+    public void setAerialDuels(String aerialDuels) {
+        this.aerialDuels = aerialDuels;
     }
 
     public String getRating() {

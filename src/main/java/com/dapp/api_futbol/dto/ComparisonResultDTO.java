@@ -3,8 +3,8 @@ package com.dapp.api_futbol.dto;
 public class ComparisonResultDTO {
     private String teamAName;
     private String teamBName;
-    private TeamMetricDTO teamA;
-    private TeamMetricDTO teamB;
+    private TeamStatsDTO teamA;
+    private TeamStatsDTO teamB;
     private String headToHeadSummary;
     private double probabilityTeamAWin;
     private double probabilityTeamBWin;
@@ -17,11 +17,11 @@ public class ComparisonResultDTO {
     public String getTeamBName() { return teamBName; }
     public void setTeamBName(String teamBName) { this.teamBName = teamBName; }
 
-    public TeamMetricDTO getTeamA() { return teamA; }
-    public void setTeamA(TeamMetricDTO teamA) { this.teamA = teamA; }
+    public TeamStatsDTO getTeamA() { return teamA; }
+    public void setTeamA(TeamStatsDTO teamA) { this.teamA = teamA; }
 
-    public TeamMetricDTO getTeamB() { return teamB; }
-    public void setTeamB(TeamMetricDTO teamB) { this.teamB = teamB; }
+    public TeamStatsDTO getTeamB() { return teamB; }
+    public void setTeamB(TeamStatsDTO teamB) { this.teamB = teamB; }
 
     public String getHeadToHeadSummary() { return headToHeadSummary; }
     public void setHeadToHeadSummary(String headToHeadSummary) { this.headToHeadSummary = headToHeadSummary; }

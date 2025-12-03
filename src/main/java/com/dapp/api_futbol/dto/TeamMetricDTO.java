@@ -3,12 +3,6 @@ package com.dapp.api_futbol.dto;
 public class TeamMetricDTO {
     private Long id;
     private String name;
-    private Integer puntos;
-    private Integer golesAFavor;
-    private Integer golesEnContra;
-    private Integer diferenciaDeGoles;
-    private Double zScorePuntos;
-    // New categorical ratings (S..F)
     private String finishingOpportunities; // Finishing opportunities
     private String longRangeShotOpportunities; // Long-range shooting opportunities
     private String comebackAbility; // Ability to come back from behind
@@ -19,13 +13,9 @@ public class TeamMetricDTO {
 
     public TeamMetricDTO() {}
 
-    public TeamMetricDTO(Long id, String name, Integer puntos, Integer golesAFavor, Integer golesEnContra, Integer diferenciaDeGoles) {
+    public TeamMetricDTO(Long id, String name, Integer points, Integer goalsInFavor, Integer goalsAgainst, Integer goalsDifference) {
         this.id = id;
         this.name = name;
-        this.puntos = puntos;
-        this.golesAFavor = golesAFavor;
-        this.golesEnContra = golesEnContra;
-        this.diferenciaDeGoles = diferenciaDeGoles;
     }
 
     public Long getId() { return id; }
@@ -33,21 +23,6 @@ public class TeamMetricDTO {
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-
-    public Integer getPuntos() { return puntos; }
-    public void setPuntos(Integer puntos) { this.puntos = puntos; }
-
-    public Integer getGolesAFavor() { return golesAFavor; }
-    public void setGolesAFavor(Integer golesAFavor) { this.golesAFavor = golesAFavor; }
-
-    public Integer getGolesEnContra() { return golesEnContra; }
-    public void setGolesEnContra(Integer golesEnContra) { this.golesEnContra = golesEnContra; }
-
-    public Integer getDiferenciaDeGoles() { return diferenciaDeGoles; }
-    public void setDiferenciaDeGoles(Integer diferenciaDeGoles) { this.diferenciaDeGoles = diferenciaDeGoles; }
-
-    public Double getzScorePuntos() { return zScorePuntos; }
-    public void setzScorePuntos(Double zScorePuntos) { this.zScorePuntos = zScorePuntos; }
 
     public String getFinishingOpportunities() { return finishingOpportunities; }
     public void setFinishingOpportunities(String finishingOpportunities) { this.finishingOpportunities = finishingOpportunities; }

@@ -1,12 +1,12 @@
 package com.dapp.api_futbol.service;
 
 import com.dapp.api_futbol.dto.ComparisonResultDTO;
-import com.dapp.api_futbol.dto.TeamMetricDTO;
 import com.dapp.api_futbol.metrics.ComparisonCalculation;
 import com.dapp.api_futbol.model.Team;
 import com.dapp.api_futbol.repository.TeamRepository;
 import com.dapp.api_futbol.exception.TeamNotFoundException;
 import org.springframework.stereotype.Service;
+import com.dapp.api_futbol.dto.TeamStatsDTO;
 
 @Service
 public class TeamComparisonService {
@@ -27,21 +27,21 @@ public class TeamComparisonService {
         out.setTeamAName(a.getName());
         out.setTeamBName(b.getName());
 
-        TeamMetricDTO teamADto = new TeamMetricDTO();
+        TeamStatsDTO teamADto = new TeamStatsDTO();
         teamADto.setId(Long.valueOf(a.getId()));
         teamADto.setName(a.getName());
-        teamADto.setPuntos(a.getPuntos());
-        teamADto.setGolesAFavor(a.getGolesAFavor());
-        teamADto.setGolesEnContra(a.getGolesEnContra());
-        teamADto.setDiferenciaDeGoles(a.getDiferenciaDeGoles());
+        teamADto.setPoints(a.getPoints());
+        teamADto.setGoalsInFavor(a.getGoalsInFavor());
+        teamADto.setGoalsAgainst(a.getGoalsAgainst());
+        teamADto.setGoalsDifference(a.getGoalsDifference());
 
-        TeamMetricDTO teamBDto = new TeamMetricDTO();
+        TeamStatsDTO teamBDto = new TeamStatsDTO();
         teamBDto.setId(Long.valueOf(b.getId()));
         teamBDto.setName(b.getName());
-        teamBDto.setPuntos(b.getPuntos());
-        teamBDto.setGolesAFavor(b.getGolesAFavor());
-        teamBDto.setGolesEnContra(b.getGolesEnContra());
-        teamBDto.setDiferenciaDeGoles(b.getDiferenciaDeGoles());
+        teamBDto.setPoints(b.getPoints());
+        teamBDto.setGoalsInFavor(b.getGoalsInFavor());
+        teamBDto.setGoalsAgainst(b.getGoalsAgainst());
+        teamBDto.setGoalsDifference(b.getGoalsDifference());
 
         out.setTeamA(teamADto);
         out.setTeamB(teamBDto);

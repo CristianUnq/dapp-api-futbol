@@ -60,10 +60,10 @@ class ComparisonCalculationTest {
 
         Team a = new Team();
         a.setName("Team A");
-        a.setPuntos(30);
+        a.setPoints(30);
         Team b = new Team();
         b.setName("Team B");
-        b.setPuntos(10);
+        b.setPoints(10);
 
         // head-to-head: 2 wins A, 1 win B, 1 draw
         Match m1 = new Match(); m1.setHomeTeamName("Team A"); m1.setAwayTeamName("Team B"); m1.setHomeScore(2); m1.setAwayScore(1);
@@ -116,8 +116,8 @@ class ComparisonCalculationTest {
     @Test
     void computeWinProbabilities_noHistory_usesPointsOnly() {
         ComparisonCalculation calc = new ComparisonCalculation(matchRepository);
-        Team a = new Team(); a.setName("A"); a.setPuntos(40);
-        Team b = new Team(); b.setName("B"); b.setPuntos(20);
+        Team a = new Team(); a.setName("A"); a.setPoints(40);
+        Team b = new Team(); b.setName("B"); b.setPoints(20);
         when(matchRepository.findHeadToHead("A", "B")).thenReturn(Collections.emptyList());
         double[] probs = calc.computeWinProbabilities(a, b);
         assertEquals(1.0, probs[0] + probs[1] + probs[2], 1e-6);
@@ -128,8 +128,8 @@ class ComparisonCalculationTest {
     @Test
     void computeWinProbabilities_zeroPoints_fallbackEqual() {
         ComparisonCalculation calc = new ComparisonCalculation(matchRepository);
-        Team a = new Team(); a.setName("A"); a.setPuntos(0);
-        Team b = new Team(); b.setName("B"); b.setPuntos(0);
+        Team a = new Team(); a.setName("A"); a.setPoints(0);
+        Team b = new Team(); b.setName("B"); b.setPoints(0);
         when(matchRepository.findHeadToHead("A", "B")).thenReturn(Collections.emptyList());
         double[] probs = calc.computeWinProbabilities(a, b);
         assertEquals(1.0, probs[0] + probs[1] + probs[2], 1e-6);

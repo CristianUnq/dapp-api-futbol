@@ -8,6 +8,14 @@ public class TeamMetricDTO {
     private Integer golesEnContra;
     private Integer diferenciaDeGoles;
     private Double zScorePuntos;
+    // New categorical ratings (S..F)
+    private String finishingOpportunities; // Finishing opportunities
+    private String longRangeShotOpportunities; // Long-range shooting opportunities
+    private String comebackAbility; // Ability to come back from behind
+    private String chanceCreation; // Chance creation
+    private String protectLead; // Protecting lead
+    private String controlOpponentsHalf; // Control of the opponent's half
+    private String aerialDuels; // Aerial duels
 
     public TeamMetricDTO() {}
 
@@ -40,4 +48,25 @@ public class TeamMetricDTO {
 
     public Double getzScorePuntos() { return zScorePuntos; }
     public void setzScorePuntos(Double zScorePuntos) { this.zScorePuntos = zScorePuntos; }
+
+    public String getFinishingOpportunities() { return finishingOpportunities; }
+    public void setFinishingOpportunities(String finishingOpportunities) { this.finishingOpportunities = finishingOpportunities; }
+
+    public String getLongRangeShotOpportunities() { return longRangeShotOpportunities; }
+    public void setLongRangeShotOpportunities(String longRangeShotOpportunities) { this.longRangeShotOpportunities = longRangeShotOpportunities; }
+
+    public String getComebackAbility() { return comebackAbility; }
+    public void setComebackAbility(String comebackAbility) { this.comebackAbility = comebackAbility; }
+
+    public String getChanceCreation() { return chanceCreation; }
+    public void setChanceCreation(String chanceCreation) { this.chanceCreation = chanceCreation; }
+
+    public String getProtectLead() { return protectLead; }
+    public void setProtectLead(String protectLead) { this.protectLead = protectLead; }
+
+    public String getControlOpponentsHalf() { return controlOpponentsHalf; }
+    public void setControlOpponentsHalf(String controlOpponentsHalf) { this.controlOpponentsHalf = controlOpponentsHalf; }
+
+    public String getAerialDuels() { return aerialDuels; }
+    public void setAerialDuels(String aerialDuels) { this.aerialDuels = aerialDuels; }
 }

@@ -1,66 +1,154 @@
 package com.dapp.api_futbol.metrics;
 
-import com.dapp.api_futbol.dto.AdvancedMetricsDTO;
+import com.dapp.api_futbol.dto.TeamMetricDTO;
+import com.dapp.api_futbol.model.Team;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Component
 public class AdvancedMetricsCalculation {
 
-    // Compute full Stat object (count, mean, median, stddev, min, max)
-    public AdvancedMetricsDTO.Stat computeStats(List<Integer> values) {
-        if (values == null || values.isEmpty()) {
-            return new AdvancedMetricsDTO.Stat(0, 0, 0, 0, 0, 0);
+    /**
+     * Compute categorical team metrics (grades S..F) from raw Team objects.
+     * Returns a list of TeamMetricDTO populated with the original numeric fields
+     * and the computed categorical grades.
+     */
+    public List<TeamMetricDTO> computeTeamMetrics(List<Team> teams) {
+        List<TeamMetricDTO> summary = new ArrayList<>();
+        if (teams == null || teams.isEmpty()) return summary;
+
+        List<Double> finishingRaw = new ArrayList<>();
+        List<Double> longShotRaw = new ArrayList<>();
+        List<Double> comebackRaw = new ArrayList<>();
+        List<Double> chanceCreationRaw = new ArrayList<>();
+        List<Double> protectRaw = new ArrayList<>();
+        List<Double> controlRaw = new ArrayList<>();
+        List<Double> aerialsRaw = new ArrayList<>();
+
+        for (Team t : teams) {
+            TeamMetricDTO dto = new TeamMetricDTO();
+            dto.setId(Long.valueOf(t.getId()));
+            dto.setName(t.getName());
+            dto.setPuntos(t.getPuntos());
+            dto.setGolesAFavor(t.getGolesAFavor());
+            dto.setGolesEnContra(t.getGolesEnContra());
+            dto.setDiferenciaDeGoles(t.getDiferenciaDeGoles());
+
+            int pj = t.getPartidosJugados() != null && t.getPartidosJugados() > 0 ? t.getPartidosJugados() : 1;
+            double gf = t.getGolesAFavor() != null ? t.getGolesAFavor() : 0.0;
+            double ga = t.getGolesEnContra() != null ? t.getGolesEnContra() : 0.0;
+            double points = t.getPuntos() != null ? t.getPuntos() : 0.0;
+            double diff = t.getDiferenciaDeGoles() != null ? t.getDiferenciaDeGoles() : 0.0;
+
+            double golesPerMatch = gf / pj;
+            double tirosPp = parseDecimal(t.getTirosPp());
+            double possession = parsePercent(t.getPosesion());
+            double passAcc = parsePercent(t.getAciertoPase());
+            double aerials = parseDecimal(t.getAereos());
+            double rating = parseDecimal(t.getRating());
+            double wins = t.getPartidosGanados() != null ? t.getPartidosGanados() : 0.0;
+            double losses = t.getPartidosPerdidos() != null ? t.getPartidosPerdidos() : 0.0;
+
+            double finishingScore = golesPerMatch * 0.6 + (rating > 0 ? (rating / 10.0) * 0.4 : 0.0);
+            double longShotScore = tirosPp;
+            double comebackScore = (gf / (ga + 1.0)) * 0.7 + Math.max(0.0, (wins - losses)) * 0.3;
+            double chanceCreationScore = possession * 0.4 + passAcc * 0.3 + tirosPp * 0.3;
+            double protectScore = (1.0 / (ga + 1.0)) * 0.5 + normalizeValue(diff) * 0.3 + (points / 100.0) * 0.2;
+            double controlScore = possession * 0.6 + passAcc * 0.4;
+            double aerialsScore = aerials;
+
+            finishingRaw.add(finishingScore);
+            longShotRaw.add(longShotScore);
+            comebackRaw.add(comebackScore);
+            chanceCreationRaw.add(chanceCreationScore);
+            protectRaw.add(protectScore);
+            controlRaw.add(controlScore);
+            aerialsRaw.add(aerialsScore);
+
+            summary.add(dto);
         }
-        List<Integer> sorted = new ArrayList<>(values);
-        Collections.sort(sorted);
-        int n = sorted.size();
-        double mean = computeMean(sorted);
-        double median = computeMedian(sorted);
-        double stddev = computeStdDev(sorted);
-        double min = sorted.get(0);
-        double max = sorted.get(n - 1);
-        return new AdvancedMetricsDTO.Stat(n, mean, median, stddev, min, max);
+
+        List<Double> finishingNorm = normalizeList(finishingRaw);
+        List<Double> longShotNorm = normalizeList(longShotRaw);
+        List<Double> comebackNorm = normalizeList(comebackRaw);
+        List<Double> chanceNorm = normalizeList(chanceCreationRaw);
+        List<Double> protectNorm = normalizeList(protectRaw);
+        List<Double> controlNorm = normalizeList(controlRaw);
+        List<Double> aerialsNorm = normalizeList(aerialsRaw);
+
+        for (int i = 0; i < summary.size(); i++) {
+            TeamMetricDTO dto = summary.get(i);
+            dto.setFinishingOpportunities(mapScoreToGrade(finishingNorm.get(i)));
+            dto.setLongRangeShotOpportunities(mapScoreToGrade(longShotNorm.get(i)));
+            dto.setComebackAbility(mapScoreToGrade(comebackNorm.get(i)));
+            dto.setChanceCreation(mapScoreToGrade(chanceNorm.get(i)));
+            dto.setProtectLead(mapScoreToGrade(protectNorm.get(i)));
+            dto.setControlOpponentsHalf(mapScoreToGrade(controlNorm.get(i)));
+            dto.setAerialDuels(mapScoreToGrade(aerialsNorm.get(i)));
+        }
+
+        return summary;
     }
 
-    // Convenience: compute mean
-    public double computeMean(List<Integer> values) {
-        if (values == null || values.isEmpty()) return 0.0;
-        double sum = 0.0;
-        for (int v : values) sum += v;
-        return sum / values.size();
+    private static double parsePercent(String s) {
+        if (s == null || s.isEmpty()) return 0.0;
+        try {
+            String cleaned = s.replace("%", "").replace(',', '.').replaceAll("[^0-9.\\-]", "");
+            if (cleaned.isEmpty()) return 0.0;
+            return Double.parseDouble(cleaned);
+        } catch (Exception e) {
+            return 0.0;
+        }
     }
 
-    // Convenience: compute median
-    public double computeMedian(List<Integer> values) {
-        if (values == null || values.isEmpty()) return 0.0;
-        List<Integer> sorted = new ArrayList<>(values);
-        Collections.sort(sorted);
-        int n = sorted.size();
-        if (n % 2 == 1) return sorted.get(n / 2);
-        return (sorted.get(n / 2 - 1) + sorted.get(n / 2)) / 2.0;
+    private static double parseDecimal(String s) {
+        if (s == null || s.isEmpty()) return 0.0;
+        try {
+            String cleaned = s.replace(',', '.').replaceAll("[^0-9.\\-]", "");
+            if (cleaned.isEmpty()) return 0.0;
+            return Double.parseDouble(cleaned);
+        } catch (Exception e) {
+            return 0.0;
+        }
     }
 
-    // Convenience: compute sample standard deviation
-    public double computeStdDev(List<Integer> values) {
-        if (values == null || values.size() < 2) return 0.0;
-        double mean = computeMean(values);
-        double sumSq = 0.0;
-        for (int v : values) sumSq += Math.pow(v - mean, 2);
-        return Math.sqrt(sumSq / (values.size() - 1));
+    private static double normalizeValue(double v) {
+        if (Double.isNaN(v) || Double.isInfinite(v)) return 0.0;
+        return Math.tanh(v / 10.0);
     }
 
-    // Compute z-score for a single value given mean and stddev
-    public Double computeZScore(Integer value, double mean, double stddev) {
-        if (value == null) return null;
-        // If there is no variation (stddev == 0) we return 0.0 as neutral z-score
-        if (stddev == 0.0) return 0.0;
-        double z = (value - mean) / stddev;
-        // Round to 2 decimals for cleaner output
-        return Math.round(z * 100.0) / 100.0;
+    private static List<Double> normalizeList(List<Double> values) {
+        double min = Double.MAX_VALUE, max = -Double.MAX_VALUE;
+        for (Double d : values) {
+            if (d == null) continue;
+            if (d < min) min = d;
+            if (d > max) max = d;
+        }
+        List<Double> out = new ArrayList<>();
+        if (min == Double.MAX_VALUE || max == -Double.MAX_VALUE) return out;
+        if (Math.abs(max - min) < 1e-9) {
+            for (int i = 0; i < values.size(); i++) out.add(50.0);
+            return out;
+        }
+        for (Double d : values) {
+            double v = d == null ? 0.0 : d;
+            double norm = (v - min) / (max - min) * 100.0;
+            out.add(norm);
+        }
+        return out;
+    }
+
+    private static String mapScoreToGrade(double score) {
+        if (Double.isNaN(score)) return "F";
+        if (score >= 95) return "S";
+        if (score >= 85) return "A";
+        if (score >= 70) return "B";
+        if (score >= 55) return "C";
+        if (score >= 40) return "D";
+        if (score >= 25) return "E";
+        return "F";
     }
 
 }

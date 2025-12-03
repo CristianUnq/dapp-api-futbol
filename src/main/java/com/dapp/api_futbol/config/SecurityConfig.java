@@ -34,10 +34,6 @@ public class SecurityConfig {
     @Bean
     @ConditionalOnMissingBean(SecurityFilterChain.class)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // ApiKey filter should run before JWT filter so that API key auth is attempted first
-        // Notes:
-        // - API should be stateless: configure SessionCreationPolicy.STATELESS
-        // - ApiKey filter runs before JWT filter so both mechanisms are supported.
         http
             .addFilterBefore(new ApiKeyAuthenticationFilter(apiKeyService), UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(new JwtAuthenticationFilter(tokenProvider), UsernamePasswordAuthenticationFilter.class)
@@ -51,13 +47,12 @@ public class SecurityConfig {
                     "/auth/register",
                     "/auth/login",
                     "/h2-console/**",
-                    "/actuator/**"
+                    "/actuator/prometheus" // <- Permitimos scrapear métricas
                 ).permitAll()
-                // Protect actuator endpoints: require ADMIN role to access monitoring endpoints
+                // Otros endpoints de actuator requieren ADMIN
                 .requestMatchers("/actuator/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
-            // Return 401 Unauthorized for unauthenticated requests (REST APIs commonly use 401)
             .exceptionHandling(e -> e.authenticationEntryPoint((request, response, authException) ->
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED)))
             .csrf(csrf -> csrf.disable())

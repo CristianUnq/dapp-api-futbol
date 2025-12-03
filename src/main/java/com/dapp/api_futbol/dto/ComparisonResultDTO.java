@@ -5,11 +5,6 @@ public class ComparisonResultDTO {
     private String teamBName;
     private TeamStatsDTO teamA;
     private TeamStatsDTO teamB;
-    private String headToHeadSummary;
-    private double probabilityTeamAWin;
-    private double probabilityTeamBWin;
-    private double probabilityDraw;
-    private double expectedGoalDifference;
 
     public String getTeamAName() { return teamAName; }
     public void setTeamAName(String teamAName) { this.teamAName = teamAName; }
@@ -23,18 +18,5 @@ public class ComparisonResultDTO {
     public TeamStatsDTO getTeamB() { return teamB; }
     public void setTeamB(TeamStatsDTO teamB) { this.teamB = teamB; }
 
-    public String getHeadToHeadSummary() { return headToHeadSummary; }
-    public void setHeadToHeadSummary(String headToHeadSummary) { this.headToHeadSummary = headToHeadSummary; }
 
-    public double getProbabilityTeamAWin() { return probabilityTeamAWin; }
-    public void setProbabilityTeamAWin(double probabilityTeamAWin) { this.probabilityTeamAWin = probabilityTeamAWin; }
-
-    public double getProbabilityTeamBWin() { return probabilityTeamBWin; }
-    public void setProbabilityTeamBWin(double probabilityTeamBWin) { this.probabilityTeamBWin = probabilityTeamBWin; }
-
-    public double getProbabilityDraw() { return probabilityDraw; }
-    public void setProbabilityDraw(double probabilityDraw) { this.probabilityDraw = probabilityDraw; }
-
-    public double getExpectedGoalDifference() { return expectedGoalDifference; }
-    public void setExpectedGoalDifference(double expectedGoalDifference) { this.expectedGoalDifference = expectedGoalDifference; }
 }

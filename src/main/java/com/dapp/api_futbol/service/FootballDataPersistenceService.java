@@ -4,6 +4,8 @@ import com.dapp.api_futbol.model.Match;
 import com.dapp.api_futbol.repository.MatchRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,8 @@ public class FootballDataPersistenceService {
 
     private final MatchRepository matchRepository;
 
+    private static final Logger logger = LoggerFactory.getLogger(FootballDataPersistenceService.class);
+
     public FootballDataPersistenceService(MatchRepository matchRepository) {
         this.matchRepository = matchRepository;
     }
@@ -35,12 +39,12 @@ public class FootballDataPersistenceService {
     @Scheduled(initialDelay = 0, fixedRate = 24 * 60 * 60 * 1000)
     @Transactional
     public void syncChampionsLeagueMatches() {
-        System.out.println("Iniciando la sincronización de partidos de la Champions League...");
+        logger.info("Iniciando la sincronización de partidos de la Champions League...");
         JsonNode matchesNode = connectionToApiFutbolData("competitions/CL/matches");
         if (matchesNode != null && matchesNode.has("matches")) {
             saveMatches(matchesNode.get("matches"));
         }
-        System.out.println("Sincronización de partidos completada.");
+        logger.info("Sincronización de partidos completada.");
     }
 
     private void saveMatches(JsonNode matchesArray) {
@@ -86,13 +90,13 @@ public class FootballDataPersistenceService {
         try {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
-                System.err.println("Error en la API de FootballData: " + response.statusCode() + " " + response.body());
+                logger.error("Error en la API de FootballData: {} {}", response.statusCode(), response.body());
                 return null;
             }
             ObjectMapper mapper = new ObjectMapper();
             return mapper.readTree(response.body());
         } catch (IOException | InterruptedException e) {
-            System.err.println("Error al conectar con la API de FootballData: " + e.getMessage());
+            logger.error("Error al conectar con la API de FootballData: {}", e.getMessage(), e);
             return null;
         }
     }

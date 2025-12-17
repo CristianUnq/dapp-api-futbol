@@ -6,6 +6,8 @@ import com.dapp.api_futbol.model.User;
 import com.dapp.api_futbol.repository.QueryHistoryRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,12 +16,15 @@ public class QueryHistoryService {
 
     private final QueryHistoryRepository queryHistoryRepository;
 
+    private static final Logger logger = LoggerFactory.getLogger(QueryHistoryService.class);
+
     public QueryHistoryService(QueryHistoryRepository queryHistoryRepository) {
         this.queryHistoryRepository = queryHistoryRepository;
     }
 
     @Transactional
     public void recordQuery(User user, String queryType, String queryParams) {
+        logger.info("Registrando consulta para usuario id={} tipo={} params={}", user != null ? user.getId() : null, queryType, queryParams);
         QueryHistory history = new QueryHistory(user, queryType, queryParams);
         queryHistoryRepository.save(history);
     }

@@ -2,6 +2,8 @@ package com.dapp.api_futbol.controller;
 
 import com.dapp.api_futbol.dto.AdvancedMetricsDTO;
 import com.dapp.api_futbol.service.TeamMetricsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +15,8 @@ public class AdvancedMetricsController {
 
     private final TeamMetricsService teamMetricsService;
 
+    private static final Logger logger = LoggerFactory.getLogger(AdvancedMetricsController.class);
+
     public AdvancedMetricsController(TeamMetricsService teamMetricsService) {
         this.teamMetricsService = teamMetricsService;
     }
@@ -21,6 +25,7 @@ public class AdvancedMetricsController {
     // This endpoint is for application users; actuator endpoints remain under /actuator/**.
     @GetMapping("advanced-metrics")
     public ResponseEntity<AdvancedMetricsDTO> getAdvancedMetrics() {
+        logger.info("Solicitando metricas avanzadas de equipos");
         AdvancedMetricsDTO metrics = teamMetricsService.getAdvancedMetrics();
         return ResponseEntity.ok(metrics);
     }

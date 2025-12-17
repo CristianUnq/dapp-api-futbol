@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +23,8 @@ public class PlayerPerformanceController {
     @Autowired
     private PlayerPerformanceService playerPerformanceService;
 
+    private static final Logger logger = LoggerFactory.getLogger(PlayerPerformanceController.class);
+
     @GetMapping("/performance/{playerId}")
     @Operation(
         summary = "Get player performance stats",
@@ -34,6 +38,7 @@ public class PlayerPerformanceController {
     public ResponseEntity<PlayerPerformanceDTO> getPlayerPerformance(
             @Parameter(description = "ID of the player", required = true)
             @PathVariable Long playerId) {
+        logger.info("Solicitando rendimiento de jugador con id={}", playerId);
         return ResponseEntity.ok(playerPerformanceService.getPlayerPerformance(playerId));
     }
 }

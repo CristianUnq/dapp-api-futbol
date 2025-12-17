@@ -8,18 +8,24 @@ import com.dapp.api_futbol.model.Player;
 import com.dapp.api_futbol.model.Team;
 import com.dapp.api_futbol.repository.PlayerRepository;
 import com.dapp.api_futbol.repository.TeamRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.DecimalFormat;
 import java.util.Comparator;
 import java.util.List;
 
 @Service
+@Transactional
 public class TeamComparisonService {
 
     private final TeamRepository teamRepository;
     private final PlayerRepository playerRepository;
     private final ComparisonCalculation comparisonCalculation;
+
+    private static final Logger logger = LoggerFactory.getLogger(TeamComparisonService.class);
 
     public TeamComparisonService(TeamRepository teamRepository, PlayerRepository playerRepository, ComparisonCalculation comparisonCalculation) {
         this.teamRepository = teamRepository;
@@ -28,6 +34,7 @@ public class TeamComparisonService {
     }
 
     public ComparisonResultDTO compareTeamsByName(String nameA, String nameB) {
+        logger.info("Comparando equipos: '{}' vs '{}'", nameA, nameB);
         Team teamA = teamRepository.findByNameIgnoreCase(nameA).orElseThrow(() -> new TeamNotFoundException(nameA));
         Team teamB = teamRepository.findByNameIgnoreCase(nameB).orElseThrow(() -> new TeamNotFoundException(nameB));
 

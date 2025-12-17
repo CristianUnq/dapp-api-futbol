@@ -5,12 +5,14 @@ import com.dapp.api_futbol.model.User;
 import com.dapp.api_futbol.repository.ApiKeyRepository;
 import org.springframework.security.crypto.bcrypt.BCrypt;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Optional;
 
 @Service
+@Transactional
 public class ApiKeyService {
 
     private final ApiKeyRepository apiKeyRepository;
@@ -68,6 +70,8 @@ public class ApiKeyService {
     }
 
     public boolean revokeByIdForUser(Long id, User user) {
+
+ 
         var opt = apiKeyRepository.findByIdAndUserId(id, user.getId());
         if (opt.isPresent()) {
             apiKeyRepository.delete(opt.get());

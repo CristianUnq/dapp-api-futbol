@@ -77,7 +77,7 @@ public class ScraperPersistenceService {
     @Scheduled(initialDelay = 0, fixedRate = 24 * 60 * 60 * 1000)
     @Transactional
     public void scrapeAndSaveChampionsLeagueTeamsAndPlayers() {
-        System.out.println("Iniciando scraping de equipos y jugadores de la Champions League...");
+        logger.info("Iniciando scraping de equipos y jugadores de la Champions League...");
         WebDriver driver = setupWebDriver();
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(30));
         Integer limitTeams = 5;
@@ -93,7 +93,7 @@ public class ScraperPersistenceService {
             Elements teamLinks = page.select("#tournament-tables div[id^='standings-'] a.team-link, #standings-1-content a.team-link, h2.tournament-tables-header ~ div a.team-link, a.team-link");
 
             if (teamLinks.isEmpty()) {
-                System.err.println("No se encontraron enlaces de equipos en la página de clasificaciones.");
+                logger.error("No se encontraron enlaces de equipos en la página de clasificaciones.");
                 return;
             }
 
@@ -113,7 +113,7 @@ public class ScraperPersistenceService {
                 // Use search-based navigation (more stable) to get the canonical team page when href is relative or missing
                 String finalTeamUrl = (teamUrl == null || teamUrl.isEmpty()) ? findTeamUrl(driver, wait, teamName) : teamUrl;
                 if (finalTeamUrl == null) {
-                    System.err.println("No se pudo determinar la URL del equipo: " + teamName);
+                    logger.warn("No se pudo determinar la URL del equipo: {}", teamName);
                     continue;
                 }
 
@@ -124,7 +124,7 @@ public class ScraperPersistenceService {
         } finally {
             if (driver != null) driver.quit();
         }
-        System.out.println("Scraping de equipos y jugadores completado.");
+        logger.info("Scraping de equipos y jugadores completado.");
         
         // Inicia el scraping de estadisticas de equipos despues de tener los equipos base.
         scrapeAndSaveTeamStats();
@@ -261,7 +261,7 @@ public class ScraperPersistenceService {
 
                     // Clean and set parsed values
                     player.setAge(extractedAge);
-                    if (extractedAge == 0) System.out.println("[Scraper Verificación] edad no encontrada para: " + playerName + " -- nameCell='" + nameCellText + "'");
+                    if (extractedAge == 0) logger.warn("[Scraper Verificación] edad no encontrada para: " + playerName + " -- nameCell='" + nameCellText + "'");
 
                     if (extractedPositions != null && !extractedPositions.isEmpty()) {
                         String cleaned = safeReplace(extractedPositions, "\\b(\\d{1,2})\\s*[\\u00A0\\s]*a\\u00F1os?\\b", "").trim();
@@ -271,7 +271,7 @@ public class ScraperPersistenceService {
                     }
 
                     // Verification log for troubleshooting: name, age, position and raw cell
-                    System.out.println("[Scraper Verificación] Nombre: '" + playerName + "', Edad: " + extractedAge + ", Posición: '" + (player.getPosition() != null ? player.getPosition() : "") + "' -- raw='" + nameCellText + "'");
+                    logger.debug("[Scraper Verificación] Nombre: '" + playerName + "', Edad: " + extractedAge + ", Posición: '" + (player.getPosition() != null ? player.getPosition() : "") + "' -- raw='" + nameCellText + "'");
 
                 // Additional stats
                 player.setHeight(cellByHeaders.apply(new String[]{"cm", "altura", "height"}));
@@ -301,7 +301,7 @@ public class ScraperPersistenceService {
                 playerRepository.save(player);
             }
         } catch (Exception e) {
-            System.err.println("Error al scrapear jugadores para el equipo " + team.getName() + ": " + e.getMessage());
+            logger.error("Error al scrapear jugadores para el equipo {}: {}", team.getName(), e.getMessage(), e);
         }
     }
 
@@ -310,12 +310,12 @@ public class ScraperPersistenceService {
         WebDriver driver = setupWebDriver();
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(20));
         try {
-            System.out.println("[Scraper] Iniciando scraping de estadísticas de equipos...");
+            logger.info("[Scraper] Iniciando scraping de estadísticas de equipos...");
             scrapeStandings(driver, wait);
             scrapeTeamPerformanceStats(driver, wait);
-            System.out.println("[Scraper] Finalizado scraping de estadísticas de equipos.");
+            logger.info("[Scraper] Finalizado scraping de estadísticas de equipos.");
         } catch (Exception e) {
-            System.err.println("Error al scrapear estadísticas de equipos: " + e.getMessage());
+            logger.error("Error al scrapear estadísticas de equipos: {}", e.getMessage(), e);
             handleScraperError(driver, e);
         } finally {
             if (driver != null) {
@@ -326,14 +326,14 @@ public class ScraperPersistenceService {
 
     private void scrapeStandings(WebDriver driver, WebDriverWait wait) {
         String url = "https://es.whoscored.com/regions/250/tournaments/12/seasons/10903/stages/24796/show/europa-champions-league-2025-2026";
-        System.out.println("[Scraper] Obteniendo datos de clasificación desde: " + url);
+        logger.info("[Scraper] Obteniendo datos de clasificación desde: " + url);
         driver.get(url);
         acceptCookies(driver, wait);
         // Esperamos por un elemento estable; usar presenceOf para evitar fallos por visibilidad/overlays.
         try {
             wait.until(ExpectedConditions.presenceOfElementLocated(By.cssSelector("h2.tournament-tables-header")));
         } catch (TimeoutException te) {
-            System.err.println("[Scraper] Timeout esperando el header de las clasificaciones, intentando continuacion de forma tolerante...");
+            logger.error("[Scraper] Timeout esperando el header de las clasificaciones, intentando continuacion de forma tolerante...");
         }
 
         // Intentamos parsear la página y buscar la tabla con múltiples selectores de fallback.
@@ -368,10 +368,10 @@ public class ScraperPersistenceService {
         }
 
         if (table == null) {
-            System.err.println("[Scraper] No se pudo encontrar el elemento <table> dentro de la sección de clasificaciones. Revisar el HTML guardado.");
+            logger.error("[Scraper] No se pudo encontrar el elemento <table> dentro de la sección de clasificaciones. Revisar el HTML guardado.");
             return;
         } else {
-            System.out.println("[Scraper] Tabla de clasificaciones encontrada usando selector: " + matchedSelector);
+            logger.info("[Scraper] Tabla de clasificaciones encontrada usando selector: {}", matchedSelector);
         }
 
         for (Element row : table.select("tbody tr")) {
@@ -399,12 +399,12 @@ public class ScraperPersistenceService {
 
             teamRepository.save(team);
         }
-        System.out.println("[Scraper] Datos de clasificación procesados.");
+        logger.info("[Scraper] Datos de clasificación procesados.");
     }
 
     private void scrapeTeamPerformanceStats(WebDriver driver, WebDriverWait wait) {
         String url = "https://es.whoscored.com/regions/250/tournaments/12/seasons/10903/stages/24796/teamstatistics/europa-champions-league-2025-2026";
-        System.out.println("[Scraper] Obteniendo estadísticas de rendimiento desde: " + url);
+        logger.info("[Scraper] Obteniendo estadísticas de rendimiento desde: " + url);
         driver.get(url);
         acceptCookies(driver, wait);
         wait.until(ExpectedConditions.presenceOfElementLocated(By.id("top-team-stats-summary-grid")));
@@ -412,7 +412,7 @@ public class ScraperPersistenceService {
         Document doc = Jsoup.parse(driver.getPageSource());
         Element table = doc.selectFirst("#top-team-stats-summary-grid");
         if (table == null) {
-            System.err.println("[Scraper] No se pudo encontrar la tabla de estadísticas de equipos.");
+            logger.error("[Scraper] No se pudo encontrar la tabla de estadísticas de equipos.");
             return;
         }
 
@@ -430,7 +430,7 @@ public class ScraperPersistenceService {
                 teamRepository.save(team);
             });
         }
-        System.out.println("[Scraper] Estadísticas de rendimiento procesadas.");
+        logger.info("[Scraper] Estadísticas de rendimiento procesadas.");
     }
 
     private Map<String, Integer> getHeaderMap(Elements headers) {
@@ -498,31 +498,6 @@ public class ScraperPersistenceService {
         }
     }
 
-   /*  private String parseDouble(String value) {
-        if (value == null || value.trim().isEmpty() || value.equals("-")) return 0.0;
-        try {
-            String cleanedValue = value
-                .replace(',', '.')
-                .replaceAll("[^\\d.]", "");
-
-            if (cleanedValue.isEmpty()) {
-                return 0.0;
-            }
-
-            double parsedValue = Double.parseDouble(cleanedValue);
-            
-            DecimalFormat df = new DecimalFormat("#.#");
-            //String valorFormateado = df.format(14.600000); // Resultado: "14.6"
-
-            // Si necesitas mantenerlo como número
-            return df.format(parsedValue);
-
-        } catch (NumberFormatException e) {
-            System.err.println("Error al parsear el double del valor: '" + value + "'");
-            return 0.0;
-        }
-    }*/
-
     private String findTeamUrl(WebDriver driver, WebDriverWait wait, String teamName) {
         try {
             String encodedTeamName = URLEncoder.encode(teamName, StandardCharsets.UTF_8);
@@ -535,7 +510,7 @@ public class ScraperPersistenceService {
                 return teamLinks.first().attr("href");
             }
         } catch (Exception e) {
-            System.err.println("Error al buscar la URL del equipo " + teamName + ": " + e.getMessage());
+            logger.error("Error al buscar la URL del equipo " + teamName + ": " + e.getMessage());
         }
         return null;
     }
@@ -572,18 +547,18 @@ public class ScraperPersistenceService {
                 // Esperamos un momento a que el banner desaparezca para evitar problemas de sincronización.
                 wait.until(ExpectedConditions.invisibilityOf(consentButton));
                 
-                System.out.println("Banner de cookies aceptado con el selector: " + selector);
+                logger.debug("Banner de cookies aceptado con el selector: " + selector);
                 return; // Salimos del método si tuvimos éxito.
             } catch (TimeoutException e) {
                 // No hacemos nada, simplemente probamos el siguiente selector.
             }
         }
         
-        System.out.println("No se encontró ningún banner de cookies conocido o ya fue aceptado.");
+        logger.debug("No se encontró ningún banner de cookies conocido o ya fue aceptado.");
     }
 
     private void handleScraperError(WebDriver driver, Exception e) {
-        System.err.println("Ocurrió un error durante el scraping: " + e.getMessage());
+        logger.error("Ocurrió un error durante el scraping: " + e.getMessage());
         e.printStackTrace();
         if (driver != null) {
             takeScreenshot(driver);
@@ -596,13 +571,13 @@ public class ScraperPersistenceService {
             File source = ts.getScreenshotAs(OutputType.FILE);
             Path destination = Path.of("failure-screenshot.png");
             Files.copy(source.toPath(), destination, StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("Screenshot guardado en: " + destination.toAbsolutePath());
+            logger.debug("Screenshot guardado en: " + destination.toAbsolutePath());
 
             Path htmlPath = Path.of("failure-page.html");
             Files.write(htmlPath, driver.getPageSource().getBytes(StandardCharsets.UTF_8));
-            System.out.println("HTML de la página guardado en: " + htmlPath.toAbsolutePath());
+            logger.debug("HTML de la página guardado en: " + htmlPath.toAbsolutePath());
         } catch (IOException ex) {
-            System.err.println("No se pudo guardar el screenshot o el HTML: " + ex.getMessage());
+            logger.error("No se pudo guardar el screenshot o el HTML: " + ex.getMessage());
         }
     }
 

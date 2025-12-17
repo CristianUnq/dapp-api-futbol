@@ -4,6 +4,8 @@ import com.dapp.api_futbol.dto.QueryHistoryDTO;
 import com.dapp.api_futbol.model.User;
 import com.dapp.api_futbol.service.QueryHistoryService;
 import com.dapp.api_futbol.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,8 @@ public class QueryHistoryController {
     private final QueryHistoryService queryHistoryService;
     private final UserService userService;
 
+    private static final Logger logger = LoggerFactory.getLogger(QueryHistoryController.class);
+
     public QueryHistoryController(QueryHistoryService queryHistoryService, UserService userService) {
         this.queryHistoryService = queryHistoryService;
         this.userService = userService;
@@ -27,7 +31,13 @@ public class QueryHistoryController {
 
     @GetMapping("/queries")
     public ResponseEntity<?> getQueryHistory(Principal principal, Pageable pageable) {
+        logger.info("Solicitando historial de consultas para usuario={}, pageSize={}, pageNumber={}",
+                principal != null ? principal.getName() : "anonymous",
+                pageable != null ? pageable.getPageSize() : "-",
+                pageable != null ? pageable.getPageNumber() : "-");
+
         if (principal == null) {
+            logger.error("Intento de acceso no autorizado al historial de consultas");
             return ResponseEntity.status(401).body("Unauthorized");
         }
 

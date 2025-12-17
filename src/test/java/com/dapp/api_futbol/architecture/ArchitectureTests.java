@@ -3,10 +3,15 @@ package com.dapp.api_futbol.architecture;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.core.domain.JavaClasses;
-import org.junit.jupiter.api.Test;
+import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.lang.ArchCondition;
+import com.tngtech.archunit.lang.ConditionEvents;
+import com.tngtech.archunit.lang.SimpleConditionEvent;
 import com.tngtech.archunit.lang.ArchRule;
+import org.junit.jupiter.api.Test;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
@@ -63,6 +68,36 @@ public class ArchitectureTests {
                     .matching("com.dapp.api_futbol.(*)..")
                     .should().beFreeOfCycles();
 
+        // --- REGLA: USO DE @Transactional EN SERVICIOS QUE USAN REPOSITORIES ---
+        public static final ArchRule services_using_repositories_should_use_transactional =
+                classes()
+                        .that().resideInAPackage("..service..")
+                        .should(new ArchCondition<JavaClass>("be annotated with @Transactional or contain a @Transactional method when they depend on repositories") {
+                            @Override
+                            public void check(JavaClass item, ConditionEvents events) {
+                                 // Detect if the service depends on any class in the repository package
+                                boolean dependsOnRepository = item.getDirectDependenciesFromSelf().stream()
+                                        .map(d -> d.getTargetClass())
+                                        .anyMatch(target -> target.getPackageName().contains(".repository"));
+
+                                if (!dependsOnRepository) {
+                                    // Not dependent on repositories -> rule is not applicable (pass)
+                                    events.add(new SimpleConditionEvent(item, true, "No repository dependency"));
+                                    return;
+                                }
+
+                                boolean classAnnotated = item.isAnnotatedWith(Transactional.class);
+                                boolean hasTransactionalMethod = item.getMethods().stream().anyMatch(m -> m.isAnnotatedWith(Transactional.class));
+
+                                if (!(classAnnotated || hasTransactionalMethod)) {
+                                    String message = String.format("%s should be annotated with @Transactional or have at least one @Transactional method", item.getName());
+                                    events.add(new SimpleConditionEvent(item, false, message));
+                                } else {
+                                    events.add(new SimpleConditionEvent(item, true, "OK"));
+                                }
+                            }
+                        });
+
     @Test
     void runArchitectureRules() {
         JavaClasses imported = new ClassFileImporter()
@@ -81,7 +116,8 @@ public class ArchitectureTests {
         layer_dependencies_are_respected.check(imported);
         services_should_be_annotated_and_named_correctly.check(imported);
         controllers_should_be_named_correctly.check(imported);
-        services_should_not_depend_on_controllers.check(imported);
+                services_should_not_depend_on_controllers.check(imported);
+                services_using_repositories_should_use_transactional.check(imported);
         no_cyclic_dependencies.check(imported);
     }
 }

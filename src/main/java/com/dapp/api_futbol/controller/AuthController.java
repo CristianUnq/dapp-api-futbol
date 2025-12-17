@@ -8,12 +8,16 @@ import com.dapp.api_futbol.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
@@ -29,6 +33,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Map<String,String> body) {
+        logger.info("Register request for username: {}", body.get("username"));
         String username = body.get("username");
         String password = body.get("password");
         User u = userService.register(username, password);
@@ -37,6 +42,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String,String> body) {
+        logger.info("Login request for username: {}", body.get("username"));
         String username = body.get("username");
         String password = body.get("password");
         var opt = userService.findByUsername(username);
@@ -57,6 +63,7 @@ public class AuthController {
 
     @PostMapping("/apikeys")
     public ResponseEntity<?> createApiKey(@RequestBody Map<String,String> body, java.security.Principal principal) {
+        logger.info("Creando API key para el usuario: {}", principal != null ? principal.getName() : body.get("username"));
         String name = body.getOrDefault("name","default");
         String username = principal != null ? principal.getName() : body.get("username");
         if (username == null) return ResponseEntity.status(401).body(Map.of("error","No authenticated user"));
@@ -68,6 +75,7 @@ public class AuthController {
 
     @GetMapping("/apikeys")
     public ResponseEntity<?> listApiKeys(java.security.Principal principal) {
+        logger.info("Listando API keys para el usuario: {}", principal != null ? principal.getName() : "N/A");
         if (principal == null) return ResponseEntity.status(401).body(Map.of("error","No authenticated user"));
         String username = principal.getName();
         User u = userService.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
@@ -79,6 +87,7 @@ public class AuthController {
 
     @DeleteMapping("/apikeys/{id}")
     public ResponseEntity<?> revokeApiKey(@PathVariable Long id, java.security.Principal principal) {
+        logger.info("Eliminando API key para el usuario: {}", principal != null ? principal.getName() : "N/A");
         if (principal == null) return ResponseEntity.status(401).body(Map.of("error","No authenticated user"));
         String username = principal.getName();
         User u = userService.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));

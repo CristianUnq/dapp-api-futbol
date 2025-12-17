@@ -6,6 +6,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import com.dapp.api_futbol.service.TeamComparisonService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class TeamComparisonController {
 
     private final TeamComparisonService teamComparisonService;
+
+    private static final Logger logger = LoggerFactory.getLogger(TeamComparisonController.class);
 
     public TeamComparisonController(TeamComparisonService teamComparisonService) {
         this.teamComparisonService = teamComparisonService;
@@ -32,6 +36,7 @@ public class TeamComparisonController {
     @GetMapping("/compare-teams")
     public ResponseEntity<ComparisonResultDTO> compareTeams(@RequestParam("teamA") String teamA,
                                                             @RequestParam("teamB") String teamB) {
+        logger.info("Solicitando metricas comparativas para los equipos: {} vs {}", teamA, teamB);
         ComparisonResultDTO result = teamComparisonService.compareTeamsByName(teamA.trim(), teamB.trim());
         return ResponseEntity.ok(result);
     }

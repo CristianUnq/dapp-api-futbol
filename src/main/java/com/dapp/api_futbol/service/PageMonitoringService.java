@@ -1,24 +1,30 @@
 package com.dapp.api_futbol.service;
 
 import com.dapp.api_futbol.dto.PageMonitorDTO;
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.management.ManagementFactory;
 import java.time.Instant;
 
 @Service
+@Transactional
 public class PageMonitoringService {
 
     private final MeterRegistry meterRegistry;
+
+    private static final Logger logger = LoggerFactory.getLogger(PageMonitoringService.class);
 
     public PageMonitoringService(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
     }
 
     public PageMonitorDTO getPageMonitor() {
+        logger.info("Solicitando métricas de monitorización de la página");
         long uptimeMillis = ManagementFactory.getRuntimeMXBean().getUptime();
         long uptimeSeconds = uptimeMillis / 1000;
 
